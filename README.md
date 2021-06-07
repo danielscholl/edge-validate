@@ -7,9 +7,9 @@ $RESOURCE_GROUP = "arc-enabled-k8s"
 $AKS_NAME = "arc-enabled-k8s"
 
 az k8s-configuration create `
-  --name hello-arc `
+  --name sample-app `
   --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
-  --operator-instance-name hello-arc --operator-namespace prod `
+  --operator-instance-name sample-app --operator-namespace sample-app `
   --enable-helm-operator `
   --helm-operator-params='--set helm.versions=v3' `
   --repository-url "git@github.com:danielscholl/edge-validate.git" `
@@ -18,9 +18,9 @@ az k8s-configuration create `
   --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
 az k8s-configuration create `
-  --name nginx-ingress `
+  --name sample-app-ingress `
   --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
-  --operator-instance-name cluster-mgmt --operator-namespace cluster-mgmt `
+  --operator-instance-name sample-app-ingress --operator-namespace sample-app-ingress `
   --enable-helm-operator `
   --helm-operator-params="--set helm.versions=v3" `
   --repository-url "git@github.com:danielscholl/edge-validate.git" `
@@ -29,9 +29,8 @@ az k8s-configuration create `
   --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
 
-
-kubectl get svc -n  cluster-mgmt -w
-kubectl get pods -n prod -w
+kubectl get svc -n sample-app-ingress -w
+kubectl get pods -n sample-app -w
 ```
 
 ### Cleanup
