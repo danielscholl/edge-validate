@@ -28,10 +28,8 @@ az k8s-configuration create `
   --operator-params="--git-path=gitops/prod --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
   --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
-
 kubectl get svc -n  cluster-mgmt -w
 kubectl get pods -n prod -w
-
 ```
 
 ### Cleanup
