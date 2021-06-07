@@ -2,7 +2,7 @@ apiVersion: helm.fluxcd.io/v1
 kind: HelmRelease
 metadata:
   name: nginx-ingress
-  namespace: ingress
+  namespace: cluster-mgmt
 spec:
   releaseName: nginx-ingress
   chart:
