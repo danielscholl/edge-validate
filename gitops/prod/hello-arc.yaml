@@ -8,7 +8,7 @@ spec:
   chart:
     git: https://github.com/danielscholl/edge-validate.git
     path: charts/hello-arc
-    ref: master
+    ref: main
   values:
     image:
       repository: liorkamrat/hello-arc
