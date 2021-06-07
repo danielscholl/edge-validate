@@ -12,9 +12,10 @@ az k8s-configuration create `
   --operator-instance-name cluster-mgmt --operator-namespace cluster-mgmt `
   --enable-helm-operator `
   --helm-operator-params="--set helm.versions=v3" `
-  --repository-url "https://github.com/danielscholl/hello_arc.git" `
+  --repository-url "git@github.com:danielscholl/edge-validate.git" `
   --scope cluster --cluster-type connectedClusters `
-  --operator-params="--git-path=releases/nginx --git-poll-interval 3s --git-branch=master"
+  --operator-params="--git-path=gitops/nginx --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
+  --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
 az k8s-configuration create `
   --name hello-arc `
@@ -22,31 +23,11 @@ az k8s-configuration create `
   --operator-instance-name hello-arc --operator-namespace prod `
   --enable-helm-operator `
   --helm-operator-params='--set helm.versions=v3' `
-  --repository-url "https://github.com/danielscholl/hello_arc.git" `
+  --repository-url "git@github.com:danielscholl/edge-validate.git" `
   --scope namespace --cluster-type connectedClusters `
-  --operator-params="--git-path=releases/prod --git-poll-interval 3s --git-branch=master"
+  --operator-params="--git-path=gitops/prod --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
+  --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
-
-az k8s-configuration create `
---name nginx-ingress `
---cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
---operator-instance-name cluster-mgmt --operator-namespace cluster-mgmt `
---enable-helm-operator `
---helm-operator-params="--set helm.versions=v3" `
---repository-url "git@github.com:danielscholl/edge-validate.git" `
---scope cluster --cluster-type connectedClusters `
---operator-params="--git-path=releases/nginx --git-poll-interval 3s --git-branch=main --git-user=fluxv1 --git-email=fluxv1@example.com"
-
-# Create Namespace-level GitOps-Config for deploying the "Hello Arc" application
-az k8s-configuration create `
---name hello-arc `
---cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
---operator-instance-name hello-arc --operator-namespace prod `
---enable-helm-operator `
---helm-operator-params='--set helm.versions=v3' `
---repository-url "git@github.com:danielscholl/edge-validate.git" `
---scope namespace --cluster-type connectedClusters `
---operator-params="--git-path=releases/prod --git-poll-interval 3s --git-branch=main --git-user=fluxv1 --git-email=fluxv1@example.com"
 
 kubectl get svc -n  cluster-mgmt -w
 kubectl get pods -n prod -w
