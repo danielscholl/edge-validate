@@ -1,10 +1,10 @@
 apiVersion: helm.fluxcd.io/v1
 kind: HelmRelease
 metadata:
-  name: nginx-ingress
-  namespace: cluster-mgmt
+  name: sample-app-ingress
+  namespace: sample-app-ingress
 spec:
-  releaseName: nginx-ingress
+  releaseName: sample-app-ingress
   chart:
     git: https://github.com/danielscholl/edge-validate.git
     path: charts/nginx-ingress

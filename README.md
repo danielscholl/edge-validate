@@ -7,17 +7,6 @@ $RESOURCE_GROUP = "arc-enabled-k8s"
 $AKS_NAME = "arc-enabled-k8s"
 
 az k8s-configuration create `
-  --name nginx-ingress `
-  --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
-  --operator-instance-name cluster-mgmt --operator-namespace cluster-mgmt `
-  --enable-helm-operator `
-  --helm-operator-params="--set helm.versions=v3" `
-  --repository-url "git@github.com:danielscholl/edge-validate.git" `
-  --scope cluster --cluster-type connectedClusters `
-  --operator-params="--git-path=gitops/nginx --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
-  --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
-
-az k8s-configuration create `
   --name hello-arc `
   --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
   --operator-instance-name hello-arc --operator-namespace prod `
@@ -25,8 +14,21 @@ az k8s-configuration create `
   --helm-operator-params='--set helm.versions=v3' `
   --repository-url "git@github.com:danielscholl/edge-validate.git" `
   --scope namespace --cluster-type connectedClusters `
-  --operator-params="--git-path=gitops/prod --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
+  --operator-params="--git-path=release/sample-app --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
   --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
+
+az k8s-configuration create `
+  --name nginx-ingress `
+  --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
+  --operator-instance-name cluster-mgmt --operator-namespace cluster-mgmt `
+  --enable-helm-operator `
+  --helm-operator-params="--set helm.versions=v3" `
+  --repository-url "git@github.com:danielscholl/edge-validate.git" `
+  --scope cluster --cluster-type connectedClusters `
+  --operator-params="--git-path=release/sample-app-ingress --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
+  --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
+
+
 
 kubectl get svc -n  cluster-mgmt -w
 kubectl get pods -n prod -w
@@ -51,6 +53,4 @@ kubectl delete clusterrole nginx-ingress
 
 kubectl delete clusterrolebinding cluster-mgmt-helm-cluster-mgmt-helm-operator
 kubectl delete clusterrolebinding nginx-ingress
-
-kubectl delete secret sh.helm.release.v1.azure-arc.v1 -n default
 ```

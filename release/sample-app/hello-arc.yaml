@@ -1,10 +1,10 @@
 apiVersion: helm.fluxcd.io/v1
 kind: HelmRelease
 metadata:
-  name: hello-arc
-  namespace: prod
+  name: sample-app
+  namespace: sample-app
 spec:
-  releaseName: hello-arc-prod
+  releaseName: sample-app
   chart:
     git: https://github.com/danielscholl/edge-validate.git
     path: charts/hello-arc
