@@ -27,7 +27,9 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations: {}
+podAnnotations:
+  fluxcd.io/automated: "true"
+  fluxcd.io/tag.sample-app: "semver:~1.0"
 
 podSecurityContext: {}
   # fsGroup: 2000
