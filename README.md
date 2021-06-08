@@ -6,6 +6,7 @@
 $RESOURCE_GROUP = "arc-enabled-k8s"
 $AKS_NAME = "arc-enabled-k8s"
 
+# Deploy Ingress
 az k8s-configuration create `
   --name sample-app `
   --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
@@ -17,6 +18,7 @@ az k8s-configuration create `
   --operator-params="--git-path=release/sample-app --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@edge.microsoft.com" `
   --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
+# Deploy Sample App
 az k8s-configuration create `
   --name sample-app-ingress `
   --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP `
@@ -28,7 +30,7 @@ az k8s-configuration create `
   --operator-params="--git-path=release/sample-app-ingress --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@edge.microsoft.com" `
   --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
-
+# Validate
 kubectl get svc -n sample-app-ingress -w
 kubectl get pods -n sample-app -w
 ```
