@@ -14,7 +14,7 @@ az k8s-configuration create `
   --helm-operator-params='--set helm.versions=v3' `
   --repository-url "git@github.com:danielscholl/edge-validate.git" `
   --scope namespace --cluster-type connectedClusters `
-  --operator-params="--git-path=release/sample-app --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
+  --operator-params="--git-path=release/sample-app --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@edge.microsoft.com" `
   --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
 az k8s-configuration create `
@@ -25,7 +25,7 @@ az k8s-configuration create `
   --helm-operator-params="--set helm.versions=v3" `
   --repository-url "git@github.com:danielscholl/edge-validate.git" `
   --scope cluster --cluster-type connectedClusters `
-  --operator-params="--git-path=release/sample-app-ingress --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@oep.microsoft.com" `
+  --operator-params="--git-path=release/sample-app-ingress --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@edge.microsoft.com" `
   --ssh-private-key-file "C:\Users\degno\.ssh\id_rsa"
 
 
