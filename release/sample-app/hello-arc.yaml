@@ -11,9 +11,9 @@ spec:
     ref: main
   values:
     image:
-      repository: liorkamrat/hello-arc
+      repository: danielscholl/hello-arc
       tag: latest
     replicaCount: 1
     env:
       name: MESSAGE
-      value: Azure Arc enabled K8s GitOps Demo!
+      value: Sample App Demo!

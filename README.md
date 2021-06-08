@@ -40,16 +40,11 @@ $RESOURCE_GROUP = "arc-enabled-k8s"
 $AKS_NAME = "arc-enabled-k8s"
 
 # Deleting GitOps Configurations from Azure Arc Kubernetes cluster
-az k8s-configuration delete --name hello-arc --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP --cluster-type connectedClusters -y
-az k8s-configuration delete --name nginx-ingress --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP --cluster-type connectedClusters -y
+az k8s-configuration delete --name sample-app --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP --cluster-type connectedClusters -y
+az k8s-configuration delete --name sample-app-ingress --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP --cluster-type connectedClusters -y
 
 # Cleaning Kubernetes cluster
-kubectl delete ns prod
-kubectl delete ns cluster-mgmt
+kubectl delete ns sample-app-ingress
+kubectl delete ns sample-app
 
-kubectl delete clusterrole cluster-mgmt-helm-cluster-mgmt-helm-operator
-kubectl delete clusterrole nginx-ingress
-
-kubectl delete clusterrolebinding cluster-mgmt-helm-cluster-mgmt-helm-operator
-kubectl delete clusterrolebinding nginx-ingress
 ```
