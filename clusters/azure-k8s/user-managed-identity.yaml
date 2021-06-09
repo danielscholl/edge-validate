@@ -1,0 +1,19 @@
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: edge-identity
+  namespace: flux-system
+spec:
+  clientID: 908ff639-f3a1-43a1-b46c-d72e16b8555d
+  resourceID: /subscriptions/2e458de2-af10-484c-a5a5-6c259d9a907f/resourcegroups/azure-k8s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/PodIdentity
+  type: 0 # user-managed identity
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: edge-identity-binding
+  namespace: flux-system
+spec:
+  azureIdentity: edge-identity
+  selector: edge-identity  # kustomize-controller label will match this name
