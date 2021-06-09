@@ -8,7 +8,7 @@ spec:
   template:
     metadata:
       labels:
-        aadpodidbinding: sops-akv-decryptor # match the AzureIdentityBinding selector
+        aadpodidbinding: edge-identity # match the AzureIdentityBinding selector
     spec:
       containers:
         - name: manager
