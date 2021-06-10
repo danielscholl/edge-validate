@@ -5,13 +5,20 @@
 Sealed Secrets require an additional controller and a new SealedSecret CRD that is safe to store in a Git Repository.  After flux applies the SealedSecret object, the controller decrypts the sealed secret and applies the plain secrets.
 
 
+
+
 2. Mozilla's [SOPS](https://github.com/mozilla/sops)
+
+*References*
+- [Tech Blog](https://techcommunity.microsoft.com/t5/azure-global/gitops-and-secret-management-with-aks-flux-cd-sops-and-azure-key/ba-p/2280068)
 
 Unlike Sealed Secrets, SOPS does not require any additional controller because Flux's kustomize-controller can perform the decryption of the secrets. SOPS has integration with Azure Key Vault to store the cryptographic used to encrypt and decrypt the secrets. Access to Key Vault is performed with an Azure Identity.
 
 Therefore, making it an ideal option for managing secrets in Azure.
 
 ![Flow and architecture diagram](./docs/images/sops_diagram.png)
+
+
 
 
 3. Azure Key Vault Provider for Secrets Store [CSI Driver](https://github.com/Azure/secrets-store-csi-driver-provider-azure)
