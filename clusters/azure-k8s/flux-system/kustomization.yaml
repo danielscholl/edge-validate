@@ -1,7 +1,0 @@
----
-kind: Kustomization
-resources:
-  - gotk-components.yaml
-  - gotk-sync.yaml
-patchesStrategicMerge:
-  - gotk-patches.yaml
