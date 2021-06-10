@@ -11,6 +11,8 @@ Unlike Sealed Secrets, SOPS does not require any additional controller because F
 
 Therefore, making it an ideal option for managing secrets in Azure.
 
+![Flow and architecture diagram](./images/sops_diagram.png)
+
 
 3. Azure Key Vault Provider for Secrets Store [CSI Driver](https://github.com/Azure/secrets-store-csi-driver-provider-azure)
 
