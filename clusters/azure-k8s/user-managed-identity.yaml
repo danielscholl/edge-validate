@@ -5,8 +5,8 @@ metadata:
   name: edge-identity
   namespace: flux-system
 spec:
-  clientID: 
-  resourceID: /subscriptions/2e458de2-af10-484c-a5a5-6c259d9a907f/resourcegroups/azure-k8s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/aks-controlplane-identity
+  clientID: b2c85e9c-7508-42a1-8311-c7f9a4c56c3f
+  resourceID: /subscriptions/2e458de2-af10-484c-a5a5-6c259d9a907f/resourcegroups/azure-k8s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/pod-identity
   type: 0 # user-managed identity
 ---
 apiVersion: aadpodidentity.k8s.io/v1
