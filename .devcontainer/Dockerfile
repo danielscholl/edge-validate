@@ -22,16 +22,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # [Option] Install Azure CLI
 ARG INSTALL_AZURE_CLI="true"
 
-# [Option] Install Docker CLI
-ARG INSTALL_DOCKER="true"
+# [Option] Install K8S Tools
+ARG INSTALL_TOOLS="true"
 
 
 RUN if [ "${INSTALL_AZURE_CLI}" = "true" ]; then bash /tmp/library-scripts/azcli-debian.sh; fi \
-  && if [ "${INSTALL_DOCKER}" = "true" ]; then \
-  bash /tmp/library-scripts/docker-debian.sh "true" "/var/run/docker-host.sock" "/var/run/docker.sock" "${USERNAME}"; \
-  else \
-  echo '#!/bin/bash\n"$@"' > /usr/local/share/docker-init.sh && chmod +x /usr/local/share/docker-init.sh; \
-  fi \
+  && if [ "${INSTALL_TOOLS}" = "true" ]; then bash /tmp/library-scripts/k8s-tools-debian.sh; fi\
   && rm -rf /var/lib/apt/lists/*
 
 
