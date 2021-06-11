@@ -1,0 +1,19 @@
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: sops-akv-decryptor
+  namespace: flux-system
+spec:
+  clientID: 2d8e9526-f653-4d57-9692-e4fd41e09aa7
+  resourceID: /subscriptions/2e458de2-af10-484c-a5a5-6c259d9a907f/resourcegroups/azure-k8s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/kv-access-identity
+  type: 0 # user-managed identity
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: sops-akv-decryptor-binding
+  namespace: flux-system
+spec:
+  azureIdentity: sops-akv-decryptor
+  selector: sops-akv-decryptor
