@@ -10,6 +10,7 @@
 # Syntax: ./k8s-tools-debian.sh
 
 HELM_VERSION=${1:-"v3.2.2"}
+SOPS_VERSION=${1:-"v3.7.1"}
 
 set -e
 
@@ -32,3 +33,9 @@ echo "Installing helm command."
 wget -q https://get.helm.sh/helm-$HELM_VERSION-linux-amd64.tar.gz -O helm-$HELM_VERSION-linux-amd64.tar.gz
 tar -zxvf helm-$HELM_VERSION-linux-amd64.tar.gz -C /usr/local/bin --strip-components=1 linux-amd64/helm 
 echo "The helm command line tool is installed... Done."
+
+echo "================================================================================="
+echo "Installing sops command."
+wget -q https://github.com/mozilla/sops/releases/download/$SOPS_VERSION/sops-$SOPS_VERSION.linux -O /usr/local/bin/sops
+chmod 755 /usr/local/bin/sops
+echo "The sops command line tool is installed... Done."
