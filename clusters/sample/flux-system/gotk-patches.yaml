@@ -8,10 +8,10 @@ spec:
   template:
     metadata:
       labels:
-        aadpodidbinding: edge-identity # match the AzureIdentityBinding selector
+        aadpodidbinding: sops-akv-decryptor  # match the AzureIdentityBinding selector
     spec:
       containers:
-        - name: manager
-          env:
-            - name: AZURE_AUTH_METHOD
-              value: msi
+      - name: manager
+        env:
+        - name: AZURE_AUTH_METHOD
+          value: msi
