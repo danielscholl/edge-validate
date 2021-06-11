@@ -3,14 +3,11 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
-			"INSTALL_AZURE_CLI": "false",
+			"INSTALL_AZURE_CLI": "true",
 			"INSTALL_TOOLS": "true"
 		}
 	},
-	"runArgs": [
-		"--env-file",
-		".devcontainer/devcontainer.env"
-	],
+	"runArgs": [],
 	"mounts": [],
 	// Set *default* container specific settings.json values on container create.
 	"settings": {},
