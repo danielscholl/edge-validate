@@ -11,10 +11,15 @@ A Subscription has to be enabled for ARC Enabled Kubernetes along with the azure
 az login
 az account set --subscription <your_subscription>
 
+# Enable Preview Features
+az feature register --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
+az feature show --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
+
 # Register Providers (one time action)
 az provider register --namespace Microsoft.Kubernetes
 az provider register --namespace Microsoft.KubernetesConfiguration
 az provider register --namespace Microsoft.ExtendedLocation
+az provider register --namespace Microsoft.ContainerService
 
 # Show Providers  (one time action)
 az provider show -n Microsoft.Kubernetes -o table
@@ -28,8 +33,7 @@ az extension add --name k8s-configuration
 az extension add --name k8s-extension
 az extension add --name customlocation
 
-# Enable Preview Features
-az feature register --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
+
 ```
 
 ## Setup an Azure Kubernetes Instance for reference validation
@@ -57,10 +61,21 @@ KUBELET_IDENTITY_ID=$(az identity show -n $KUBELET_IDENTITY_NAME -g $RESOURCE_GR
 KUBELET_IDENTITY_OID=$(az identity show -n $KUBELET_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "principalId")
 
 # Create Cluster
+AKS_NAME="azure-k8s"
 az aks create -g $RESOURCE_GROUP -n $AKS_NAME --enable-managed-identity --assign-identity $IDENTITY_ID --assign-kubelet-identity $KUBELET_IDENTITY_ID --generate-ssh-keys
 
 # Get Credentials
 az aks get-credentials -g $RESOURCE_GROUP -n $AKS_NAME
+
+# Validate Cluster
+kubectl cluster-info --context $AKS_NAME
+
+# Allow Kubelet "Virtual Machine Contributor" role
+RESOURCE_GROUP_ID=$(az group show -n $RESOURCE_GROUP -o tsv --query id)
+AKS_RESOURCE_GROUP_NAME=$(az aks show -g $RESOURCE_GROUP -n $AKS_NAME -o tsv --query nodeResourceGroup)
+AKS_RESOURCE_GROUP_ID=$(az group show -n $AKS_RESOURCE_GROUP_NAME -o tsv --query id)
+KUBELET_CLIENT_ID=$(az aks show -g $RESOURCE_GROUP -n $AKS_NAME -o tsv --query identityProfile.kubeletidentity.clientId)
+az role assignment create --role "Virtual Machine Contributor" --assignee $KUBELET_CLIENT_ID --scope $AKS_RESOURCE_GROUP_ID
 ```
 
 ## Setup an ARC Enabled Kubernetes Instance for validation
@@ -72,14 +87,11 @@ Using Github Code Spaces create a Kubernetes Environment.
 kind create cluster
 
 # Arc enable the Kubernetes Cluster
-RESOURCE_GROUP="arc-enabled-k8s"
 ARC_AKS_NAME="kind-k8s"
-LOCATION="eastus"
-
-# Arc enable the cluster
 az connectedk8s connect -n $ARC_AKS_NAME -g $RESOURCE_GROUP
 
 # Validate ARC agents
+kubectl cluster-info --context kind-kind
 kubectl get pods -n azure-arc
 ```
 
