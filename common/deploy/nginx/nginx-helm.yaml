@@ -1,0 +1,22 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: nginx-ingress
+  namespace: flux-system
+spec:
+  chart:
+    spec:
+      chart: ingress-nginx # use Kubernetes nginx chart
+      sourceRef:
+        kind: HelmRepository
+        name: nginx-repo
+  values:
+    controller:
+      publishService:
+        enabled: true
+      metrics:
+        enabled: true
+  interval: 5m0s
+  releaseName: nginx-ingress
+  targetNamespace: nginx-ingress
