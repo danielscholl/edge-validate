@@ -144,13 +144,21 @@ kubectl get pods -n azure-arc
 
 Azure AKS leverages AAD Pod Identity to allow a managed identity to access Azure Resources in a secure manner.  This feature is being built into the AKS experience as a first class citizen instead of a configured option.
 
+    [Process Documentation]()
+
+        [X] AKS Process
+
+        Questions Raised
+        ----------------
+        1. User Managed Identity doesn't exist on ARC Enabled AKS can AAD Pod Identity still be used?
+
 ![diagram](./docs/images/aad_pod_identity.png)
 
 2. System Assigned Identity
 
     [Process Documentation]()
 
-        [X] AKS Process
+        [ ] AKS Process
         [ ] ARC Enabled Process
 
         Questions Raised
