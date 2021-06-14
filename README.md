@@ -103,10 +103,10 @@ kubectl get pods -n azure-arc
 
 1. Flux CD
 
-    [Process Documentation](./docs/gitops-management/1.FluxSetup.md)
+    [Instructions](./docs/gitops-management/1.FluxSetup.md)
 
-        [X] AKS Process
-        [X] ARC Enabled Process
+        [X] AKS Cloud
+        [X] ARC Enabled AKS
 
         Questions Raised
         ----------------
@@ -119,8 +119,7 @@ kubectl get pods -n azure-arc
 
     [Process Documentation]()
 
-        [ ] AKS Process
-        [X] ARC Enabled Process
+        [X] ARC Enabled AKS
 
         Questions Raised
         ----------------
@@ -146,7 +145,7 @@ Azure AKS leverages AAD Pod Identity to allow a managed identity to access Azure
 
     [Process Documentation]()
 
-        [X] AKS Process
+        [X] AKS Cloud
 
         Questions Raised
         ----------------
@@ -158,12 +157,12 @@ Azure AKS leverages AAD Pod Identity to allow a managed identity to access Azure
 
     [Process Documentation]()
 
-        [ ] AKS Process
-        [ ] ARC Enabled Process
+        [ ] AKS Cloud
+        [ ] ARC Enabled AKS
 
         Questions Raised
         ----------------
-        1. ARC Clusters can only leverage a System Assigned Identity.  Is the meta API available?
+        1. ARC Clusters can only leverage a System Assigned Identity.  Is the meta API still available to be called and how?
 
 TODO:// Document and validate how System Assigned Identities can be used in ARC enabled Kubernetes
 
@@ -208,10 +207,10 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
     Sealed Secrets require an additional controller and a new SealedSecret CRD that is safe to store in a Git Repository.  After flux applies the SealedSecret object, the controller decrypts the sealed secret and applies the plain secrets.
 
-    [Process Documentation]()
+    [Instruction Documentation]()
 
-        [ ] AKS Process
-        [ ] ARC Enabled Process
+        [ ] AKS Cloud
+        [ ] ARC Enabled AKS
 
         Questions Raised
         ----------------
@@ -224,10 +223,10 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
     Unlike Sealed Secrets, SOPS does not require any additional controller because Flux's kustomize-controller can perform the decryption of the secrets. SOPS has integration with Azure Key Vault to store the cryptographic used to encrypt and decrypt the secrets. Access to Key Vault is performed with an Azure Identity.
 
-    [AKS Process Documentation](./docs/1.AksSetup.md)
+    [Instruction Documentation](./docs/4.MozilaSops.md)
 
-        [X] AKS Process
-        [ ] ARC Enabled Process
+        [X] AKS Cloud
+        [ ] ARC Enabled AKS
 
         Questions Raised
         ----------------
