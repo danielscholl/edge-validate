@@ -95,9 +95,67 @@ kubectl cluster-info --context kind-kind
 kubectl get pods -n azure-arc
 ```
 
+## Validation - Gitops
 
-## Validation - Identity
+**Technical Links**
 
+**Options**
+
+1. Flux CD
+
+    [Process Documentation](./docs/gitops-management/1.FluxSetup.md)
+
+        [X] AKS Process
+        [X] ARC Enabled Process
+
+        Questions Raised
+        ----------------
+        1. This leverages kustomizations controllers. Can the same pattern be accomplished with ARC GitOps?
+
+
+![diagram](./docs/images/flux_diagram.png)
+
+2. Azure ARC Gitops
+
+    [Process Documentation]()
+
+        [ ] AKS Process
+        [X] ARC Enabled Process
+
+        Questions Raised
+        ----------------
+        1. This is a feature only available to ARC Enabled Process. Is it an official RoadMap Item?
+
+![diagram](./docs/images/arc_gitops_diagram.png)
+
+
+
+
+## Validation - Identity Management
+
+**Technical Links**
+
+- [AAD Pod Identity](https://docs.microsoft.com/en-us/azure/aks/use-azure-ad-pod-identity)
+
+
+**Options**
+
+1. User Managed Identity with AAD Pod Identity
+
+Azure AKS leverages AAD Pod Identity to allow a managed identity to access Azure Resources in a secure manner.  This feature is being built into the AKS experience as a first class citizen instead of a configured option.
+
+![diagram](./docs/images/aad_pod_identity.png)
+
+2. System Assigned Identity
+
+    [Process Documentation]()
+
+        [X] AKS Process
+        [ ] ARC Enabled Process
+
+        Questions Raised
+        ----------------
+        1. ARC Clusters can only leverage a System Assigned Identity.  Is the meta API available?
 
 TODO:// Document and validate how System Assigned Identities can be used in ARC enabled Kubernetes
 
@@ -105,6 +163,31 @@ TODO:// Document and validate how System Assigned Identities can be used in ARC 
 
 
 ## Validation - Secret Management
+
+This validation requires an Azure Key Vault to be provisioned.
+
+### Setup Azure KeyVault
+
+```bash
+VAULT_NAME="azure-k8s-vault"
+RESOURCE_GROUP="azure-k8s"
+LOCATION="eastus"
+
+# Create Key Vault
+az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+
+# Create a Cryptographic Key
+az keyvault key create --name sops-key --vault-name $VAULT_NAME --protection software --ops encrypt decrypt
+
+# Create a User Managed Identity
+KV_IDENTITY_NAME="kv-access-identity"
+az identity create -n $KV_IDENTITY_NAME -g $RESOURCE_GROUP -l $LOCATION
+KV_IDENTITY_OID=$(az identity show -n $KV_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "principalId")
+KV_IDENTITY_ID=$(az identity show -n $KV_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "id")
+
+# Add Access Policy for Managed Identity
+az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_IDENTITY_OID --key-permissions encrypt decrypt
+```
 
 **Technical Links**
 - [Tech Blog](https://techcommunity.microsoft.com/t5/azure-global/gitops-and-secret-management-with-aks-flux-cd-sops-and-azure-key/ba-p/2280068)
