@@ -9,10 +9,24 @@
 #
 # Syntax: ./k8s-tools-debian.sh
 
+KIND_VERSION=${1:-"v0.11.1"}
 HELM_VERSION=${1:-"v3.2.2"}
 SOPS_VERSION=${1:-"v3.7.1"}
 
 set -e
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo -e 'Script must be run as root. Use sudo, su, or add "USER root" to your Dockerfile before running this script.'
+    exit 1
+fi
+
+
+echo "================================================================================"
+echo "Installing kind command."
+wget -q https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-$(uname)-amd64 -O /usr/local/bin/kind
+chmod 755 /usr/local/bin/kind
+echo "The kind command line tool is installed... Done."
+
 
 echo "================================================================================"
 echo "Installing flux command."
