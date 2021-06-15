@@ -2,7 +2,7 @@
 
 The purpose of this project is an attempt to validate certain technologies and patterns using Azure Arc enabled AKS. 
 
-Github Code Spaces is supported in order to assist in reducing the need to tool an environment to perform the validations and provide a place to learn.
+Github Code Spaces is used to assist in reducing tooling an environment to perform the validations and provide an easy place to learn.
 
 
 ## Prepare a Subscription
