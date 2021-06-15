@@ -1,4 +1,4 @@
-# Instructions for Testing Pod Identity
+# Instructions for Testing Pod Identity using flux
 
 Install AAD Pod Identity using
 
