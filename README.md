@@ -67,7 +67,9 @@ KUBELET_IDENTITY_OID=$(az identity show -n $KUBELET_IDENTITY_NAME -g $RESOURCE_G
 
 # Create a Cluster
 AKS_NAME="azure-k8s"
-az aks create -g $RESOURCE_GROUP -n $AKS_NAME --enable-managed-identity --assign-identity $IDENTITY_ID --assign-kubelet-identity $KUBELET_IDENTITY_ID --generate-ssh-keys
+az aks create -g $RESOURCE_GROUP -n $AKS_NAME --enable-managed-identity --enable-pod-identity --enable-pod-identity-with-kubenet \
+    --assign-identity $IDENTITY_ID --assign-kubelet-identity $KUBELET_IDENTITY_ID \
+    --generate-ssh-keys
 
 # Get the Credentials
 az aks get-credentials -g $RESOURCE_GROUP -n $AKS_NAME
@@ -143,6 +145,7 @@ kubectl get pods -n azure-arc
         ----------------
         1. This is a feature only available to an ARC Enabled Cluster.
         2. Removes the need to configure flux on the server as ARC manages the flux setup.
+        3. Utilizes Flux v1 but will be updated to v2.
 
 ![diagram](./docs/images/arc_gitops_diagram.png)
 
