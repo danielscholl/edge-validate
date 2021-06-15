@@ -1,6 +1,6 @@
 # Kubernetes on Edge Validation
 
-The purpose of this project is to validate certain technologies and patterns using Azure Arc enabled AKS. 
+The purpose of this project is to validate certain technologies and patterns using an Azure Arc enabled Cluster. 
 
 Github Code Spaces is used as the environment to perform the validations and provide an easy place to learn.
 
@@ -40,7 +40,7 @@ az extension add --name customlocation
 
 ## Setup an Azure Kubernetes Instance for reference validation
 
-An AKS instance is used as a reference point comparision of what and how things are done on AKS which can then be compared to an ARC enabled Cluster. 
+A public cloud AKS instance is used as a reference point to understand how things are done on AKS which is compared to an ARC enabled Cluster. 
 
 [User Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-managed-identity) will be used in the creation of this AKS instance.
 
