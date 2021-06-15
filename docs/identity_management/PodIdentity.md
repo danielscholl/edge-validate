@@ -1,8 +1,10 @@
 # Instructions for Testing Pod Identity using flux
 
-Install AAD Pod Identity using
 
 ```bash
+AKS_NAME="azure-k8s"
+kubectl config use-context $AKS_NAME
+
 cat > ./clusters/$AKS_NAME/aad-pod-identity.yaml <<EOF
 ---
 apiVersion: v1

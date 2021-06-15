@@ -17,9 +17,9 @@ kubectl config use-context $AKS_NAME
 flux check --pre
 
 # Export Github Information as necessary
-export GITHUB_TOKEN="<your-github-token>"
-export GITHUB_REPO="<your-github-project>"
-export GITHUB_USER="<your-github-organization>"
+GITHUB_TOKEN="<your-github-token>"
+GITHUB_REPO="<your-github-project>"
+GITHUB_USER="<your-github-organization>"
 
 # Bootstrap Flux Components
 flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$AKS_NAME
@@ -40,13 +40,14 @@ kubectl config use-context $AKS_NAME
 # Validate Flux requirements
 flux check --pre
 
-# Export Github Information if necessary
-export GITHUB_REPO="edge-validate"
-export GITHUB_USER="<your-github-organization>"
+# Export Github Information as necessary
+GITHUB_TOKEN="<your-github-token>"
+GITHUB_REPO="<your-github-project>"
+GITHUB_USER="<your-github-organization>"
 
 
 # Bootstrap Flux Components
-GITHUB_TOKEN="" flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$AKS_NAME
+flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$AKS_NAME
 
 # Validate
 flux check
