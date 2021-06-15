@@ -1,17 +1,19 @@
-# edge-validate
+# Kubernetes on Edge Validation Effort
 
-The purpose of this project is to attempt to validate certain technologies and patterns using Azure Arc enabled AKS. Github Code Spaces is used in an effort to eliminate the need for tooling environments.
+The purpose of this project is an attempt to validate certain technologies and patterns using Azure Arc enabled AKS. Github Code Spaces is supported in order to assist in reducing the need to tool an environment to perform the validations and provide a place to learn.
+
 
 ## Prepare a Subscription
 
-A Subscription has to be enabled for ARC Enabled Kubernetes along with the azure cli extensions loaded.
+An Azure Subscription has to be properly configured with the features and providers necessary for configuration along with certain cli extensions loaded.
+
 
 ```bash
 # Azure CLI Login
 az login
 az account set --subscription <your_subscription>
 
-# Enable Preview Features
+# Enable Preview Features (one time action)
 az feature register --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
 az feature show --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
 
@@ -32,14 +34,15 @@ az extension add --name connectedk8s
 az extension add --name k8s-configuration
 az extension add --name k8s-extension
 az extension add --name customlocation
-
-
 ```
 
 ## Setup an Azure Kubernetes Instance for reference validation
 
-An AKS instance is setup to be used as a reference point comparision of what can be done on AKS vs and ARC enabled AKS. 
-[Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-managed-identity) will be used in this AKS instance.
+An AKS instance is used as a reference point comparision of what and how things are done on AKS which can then be compared to an ARC enabled Cluster. 
+
+[User Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-managed-identity) will be used in the creation of this AKS instance.
+
+[Pod Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-azure-ad-pod-identity) is a preview feature used to easily manage the primatives that allow pods to access Azure resources.
 
 
 ```bash
@@ -60,17 +63,17 @@ az identity create -n $KUBELET_IDENTITY_NAME -g $RESOURCE_GROUP -l $LOCATION
 KUBELET_IDENTITY_ID=$(az identity show -n $KUBELET_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "id")
 KUBELET_IDENTITY_OID=$(az identity show -n $KUBELET_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "principalId")
 
-# Create Cluster
+# Create a Cluster
 AKS_NAME="azure-k8s"
 az aks create -g $RESOURCE_GROUP -n $AKS_NAME --enable-managed-identity --assign-identity $IDENTITY_ID --assign-kubelet-identity $KUBELET_IDENTITY_ID --generate-ssh-keys
 
-# Get Credentials
+# Get the Credentials
 az aks get-credentials -g $RESOURCE_GROUP -n $AKS_NAME
 
-# Validate Cluster
+# Validate the Cluster
 kubectl cluster-info --context $AKS_NAME
 
-# Allow Kubelet "Virtual Machine Contributor" role
+# Configure a Kubelet "Virtual Machine Contributor" role
 RESOURCE_GROUP_ID=$(az group show -n $RESOURCE_GROUP -o tsv --query id)
 AKS_RESOURCE_GROUP_NAME=$(az aks show -g $RESOURCE_GROUP -n $AKS_NAME -o tsv --query nodeResourceGroup)
 AKS_RESOURCE_GROUP_ID=$(az group show -n $AKS_RESOURCE_GROUP_NAME -o tsv --query id)
@@ -78,9 +81,15 @@ KUBELET_CLIENT_ID=$(az aks show -g $RESOURCE_GROUP -n $AKS_NAME -o tsv --query i
 az role assignment create --role "Virtual Machine Contributor" --assignee $KUBELET_CLIENT_ID --scope $AKS_RESOURCE_GROUP_ID
 ```
 
+
 ## Setup an ARC Enabled Kubernetes Instance for validation
 
-Using Github Code Spaces create a Kubernetes Environment.
+In an attempt to make things easy for the purpose of simple validations a `kind` kubernetes cluster will be used hosted in Github Code Spaces.
+
+[Github Code Spaces](https://docs.github.com/en/codespaces) is an online development environment hosted by Github and powered by Visual Studio Code.
+
+[Kubernetes-sigs/kind](https://github.com/kubernetes-sigs/kind) is a tool for running local Kubernetes clusters using Docker container "nodes".
+
 
 ```bash
 # Using kind create a Kubernetes Cluster
@@ -99,34 +108,40 @@ kubectl get pods -n azure-arc
 
 **Technical Links**
 
+[Flux](https://fluxcd.io/docs/) is a tool for keeping Kubernetes clusters in sync with sources of configuration.
+
+[GitOps Configurations](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/conceptual-configurations) is a microsoft managed method for enabling GitOps practices on an ARC enabled Cluster.
+
+
 **Options**
 
-1. Flux CD
+1. Unmanaged Flux Configuration
 
-    [Instructions](./docs/gitops-management/1.FluxSetup.md)
+    [Instructions](./docs/gitops-management/FluxSetup.md)
 
         [X] AKS Cloud
         [X] ARC Enabled AKS
 
-        Questions Raised
+        Notes
         ----------------
-        1. This leverages kustomizations controllers. Can the same pattern be accomplished with ARC GitOps?
+        1. This leverages kustomizations controllers with a single source of truth Git Repository for the cluster.
 
 
 ![diagram](./docs/images/flux_diagram.png)
 
-2. Azure ARC Gitops
 
-    [Process Documentation]()
+2. Managed Flux with ARC Enabled Kubernetes Gitops Configuration
+
+    [Instructions](./docs/gitops-management/FluxSetup.md)
 
         [X] ARC Enabled AKS
 
-        Questions Raised
+        Notes
         ----------------
-        1. This is a feature only available to ARC Enabled Process. Is it an official RoadMap Item?
+        1. This is a feature only available to an ARC Enabled Cluster.
+        2. Removes the need to configure flux on the server as ARC manages the flux setup.
 
 ![diagram](./docs/images/arc_gitops_diagram.png)
-
 
 
 
