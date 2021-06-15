@@ -32,3 +32,10 @@ curl -sL https://packages.microsoft.com/keys/microsoft.asc | (OUT=$(apt-key add 
 apt-get update
 apt-get install -y azure-cli
 echo "Done!"
+
+# Install the Azure CLI Extensions
+az extension add --name aks-preview
+az extension add --name connectedk8s
+az extension add --name k8s-configuration
+az extension add --name k8s-extension
+az extension add --name customlocation

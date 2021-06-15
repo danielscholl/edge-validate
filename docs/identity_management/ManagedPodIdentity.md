@@ -1,5 +1,10 @@
 # Instructions for Testing Managed Pod Identity
 
+**Technical Links**
+
+[Technical Blog](https://blog.baeke.info/2020/12/09/azure-ad-pod-managed-identities-in-aks-revisited/)
+[Azure Documentation](https://docs.microsoft.com/en-us/azure/aks/use-azure-ad-pod-identity)
+
 ```bash
 RESOURCE_GROUP="azure-k8s"
 APP_IDENTITY="test-identity"
