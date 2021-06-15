@@ -119,7 +119,7 @@ kubectl get pods -n azure-arc
 
 1. Unmanaged Flux Configuration
 
-    [Instructions](./docs/gitops-management/FluxSetup.md)
+    [Instructions](./docs/gitops_management/FluxSetup.md)
 
         [X] AKS Cloud
         [X] ARC Enabled AKS
@@ -135,7 +135,7 @@ kubectl get pods -n azure-arc
 
 2. Managed Flux with ARC Enabled Kubernetes Gitops Configuration
 
-    [Instructions](./docs/gitops-management/FluxSetup.md)
+    [Instructions](././docs/gitops_management/GitopsConfiguration.md)
 
         [X] ARC Enabled AKS
 
