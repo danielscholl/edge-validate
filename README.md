@@ -160,7 +160,7 @@ kubectl get pods -n azure-arc
 
 **Options**
 
-1. Azure Active Directory Pod Managed Identities
+1. AAD Pod Identity Unmanaged or Pod Managed
 
     [Instructions](././docs/identity_management/ManagedPodIdentity.md)
     [Flux Instructions](././docs/identity_management/PodIdentity.md)
