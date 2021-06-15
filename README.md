@@ -86,7 +86,7 @@ az role assignment create --role "Virtual Machine Contributor" --assignee $KUBEL
 
 ## Setup an ARC Enabled Kubernetes Instance for validation
 
-In an attempt to make things easy for the purpose of simple validations a `kind` kubernetes cluster will be used hosted in Github Code Spaces.
+To make things easy for the purpose of simple validations a `kind` kubernetes cluster is used and hosted in Github Code Spaces.
 
 [Github Code Spaces](https://docs.github.com/en/codespaces) is an online development environment hosted by Github and powered by Visual Studio Code.
 
@@ -112,7 +112,7 @@ kubectl get pods -n azure-arc
 
 [Flux](https://fluxcd.io/docs/) is a tool for keeping Kubernetes clusters in sync with sources of configuration.
 
-[GitOps Configurations](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/conceptual-configurations) is a microsoft managed method for enabling GitOps practices on an ARC enabled Cluster.
+[GitOps Configurations](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/conceptual-configurations) is a microsoft managed method for enabling GitOps practices on an ARC enabled Cluster using Flux.
 
 
 **Options**
@@ -127,6 +127,7 @@ kubectl get pods -n azure-arc
         Notes
         ----------------
         1. This leverages kustomizations controllers with a single source of truth Git Repository for the cluster.
+        2. Will work regardless of Azure or Edge.
 
 
 ![diagram](./docs/images/flux_diagram.png)
