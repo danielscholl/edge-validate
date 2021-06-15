@@ -1,13 +1,13 @@
 # Kubernetes on Edge Validation
 
-The purpose of this project is an attempt to validate certain technologies and patterns using Azure Arc enabled AKS. 
+The purpose of this project is to validate certain technologies and patterns using Azure Arc enabled AKS. 
 
-Github Code Spaces is used to assist in reducing tooling an environment to perform the validations and provide an easy place to learn.
+Github Code Spaces is used to automate an environment used to perform the validations and provide an easy place to learn.
 
 
 ## Prepare a Subscription
 
-An Azure Subscription has to be properly configured with the features and providers necessary for configuration along with certain cli extensions loaded.
+Configure a subscription with the features and providers necessary with cli extensions loaded.
 
 
 ```bash
