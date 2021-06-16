@@ -34,8 +34,8 @@ git pull
 
 **Install Flux on the ARC Enabled Kubernetes Instance**
 ```bash
-AKS_NAME="kind-kind"
-kubectl config use-context $AKS_NAME
+ARC_AKS_NAME="kind-k8s"
+kubectl config use-context "kind-$ARC_AKS_NAME"
 
 # Validate Flux requirements
 flux check --pre
@@ -47,7 +47,7 @@ GITHUB_USER="<your-github-organization>"
 
 
 # Bootstrap Flux Components
-flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$AKS_NAME
+flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$ARC_AKS_NAME
 
 # Validate
 flux check

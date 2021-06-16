@@ -44,8 +44,6 @@ A public cloud AKS instance is used as a reference point to understand how thing
 
 [User Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-managed-identity) will be used in the creation of this AKS instance.
 
-[Pod Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-azure-ad-pod-identity) is a preview feature used to easily manage the primatives that allow pods to access Azure resources.
-
 
 ```bash
 RESOURCE_GROUP="azure-k8s"
@@ -59,16 +57,11 @@ IDENTITY_NAME="aks-controlplane-identity"
 az identity create -n $IDENTITY_NAME -g $RESOURCE_GROUP -l $LOCATION
 IDENTITY_ID=$(az identity show -n $IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "id")
 
-# Create a Kubelet Identity
-KUBELET_IDENTITY_NAME="aks-kubelet-identity"
-az identity create -n $KUBELET_IDENTITY_NAME -g $RESOURCE_GROUP -l $LOCATION
-KUBELET_IDENTITY_ID=$(az identity show -n $KUBELET_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "id")
-KUBELET_IDENTITY_OID=$(az identity show -n $KUBELET_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "principalId")
-
-# Create a Cluster
+# Create a Cluster 
 AKS_NAME="azure-k8s"
-az aks create -g $RESOURCE_GROUP -n $AKS_NAME --enable-managed-identity --enable-pod-identity --enable-pod-identity-with-kubenet \
-    --assign-identity $IDENTITY_ID --assign-kubelet-identity $KUBELET_IDENTITY_ID \
+az aks create -g $RESOURCE_GROUP -n $AKS_NAME \
+    --enable-managed-identity  \
+    --assign-identity $IDENTITY_ID \
     --generate-ssh-keys
 
 # Get the Credentials
@@ -76,13 +69,6 @@ az aks get-credentials -g $RESOURCE_GROUP -n $AKS_NAME
 
 # Validate the Cluster
 kubectl cluster-info --context $AKS_NAME
-
-# Configure a Kubelet "Virtual Machine Contributor" role
-RESOURCE_GROUP_ID=$(az group show -n $RESOURCE_GROUP -o tsv --query id)
-AKS_RESOURCE_GROUP_NAME=$(az aks show -g $RESOURCE_GROUP -n $AKS_NAME -o tsv --query nodeResourceGroup)
-AKS_RESOURCE_GROUP_ID=$(az group show -n $AKS_RESOURCE_GROUP_NAME -o tsv --query id)
-KUBELET_CLIENT_ID=$(az aks show -g $RESOURCE_GROUP -n $AKS_NAME -o tsv --query identityProfile.kubeletidentity.clientId)
-az role assignment create --role "Virtual Machine Contributor" --assignee $KUBELET_CLIENT_ID --scope $AKS_RESOURCE_GROUP_ID
 ```
 
 
@@ -97,14 +83,14 @@ To make things easy for the purpose of simple validations a `kind` kubernetes cl
 
 ```bash
 # Using kind create a Kubernetes Cluster
-kind create cluster
+ARC_AKS_NAME="kind-k8s"
+kind create cluster --name $ARC_AKS_NAME
 
 # Arc enable the Kubernetes Cluster
-ARC_AKS_NAME="kind-k8s"
 az connectedk8s connect -n $ARC_AKS_NAME -g $RESOURCE_GROUP
 
 # Validate ARC agents
-kubectl cluster-info --context kind-kind
+kubectl cluster-info --context $ARC_AKS_NAME
 kubectl get pods -n azure-arc
 ```
 
@@ -160,13 +146,12 @@ kubectl get pods -n azure-arc
 
 **Options**
 
-1. AAD Pod Identity Unmanaged or Pod Managed
+1. AAD Pod Identity
 
     [Instructions](././docs/identity_management/PodIdentity.md)
-    [Managed Instructions](././docs/identity_management/ManagedPodIdentity.md)
-    
 
         [X] AKS Cloud
+        [ ] ARC Enabled AKS
 
         Notes
         ----------------
@@ -175,9 +160,21 @@ kubectl get pods -n azure-arc
 
 ![diagram](./docs/images/aad_pod_identity.png)
 
-2. System Assigned Identity
 
-    [Process Documentation]()
+2. Managed Pod Identity 
+
+    [Instructions](././docs/identity_management/ManagedPodIdentity.md)
+
+        [X] AKS Cloud
+
+        Notes
+        ----------------
+        1. This is leveraging the AKS Plugins and only works in cloud AKS.
+
+
+3. System Assigned Identity
+
+    [Documentation]()
 
         [ ] AKS Cloud
         [ ] ARC Enabled AKS

@@ -1,5 +1,14 @@
-# Instructions for Testing Pod Identity using flux
+# Instructions for Setting up Pod Identity
 
+Install AAD Pod Identity in the clusters.
+> This process will perform a checkin on the git repository /clusters/`$AKS_NAME`/flux-system
+
+**Technical Links**
+[AAD Pod Identity with Kubenet](https://azure.github.io/aad-pod-identity/docs/configure/aad_pod_identity_on_kubenet/)
+[AAD Pod Identity Managed Mode](https://azure.github.io/aad-pod-identity/docs/configure/pod_identity_in_managed_mode/)
+
+
+**Install AAD Pod Identity on the Azure Kubernetes Instance**
 
 ```bash
 AKS_NAME="azure-k8s"
@@ -91,4 +100,61 @@ git add ./clusters/$AKS_NAME/sops-identity.yaml && git commit -m "Updated Identi
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
 kubectl -n flux-system describe AzureIdentity
+```
+
+---
+
+**ARC Enabled Instance**
+
+```bash
+ARC_AKS_NAME="kind-k8s"
+kubectl config use-context "kind-$ARC_AKS_NAME"
+
+cat > ./clusters/$ARC_AKS_NAME/aad-pod-identity.yaml <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aad-pod-identity
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: aad-pod-identity
+  namespace: aad-pod-identity
+spec:
+  url: https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
+  interval: 10m
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: aad-pod-identity
+  namespace: aad-pod-identity
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: aad-pod-identity
+      version: 4.0.0
+      sourceRef:
+        kind: HelmRepository
+        name: aad-pod-identity
+        namespace: aad-pod-identity
+      interval: 1m
+  values:
+    operationMode: managed
+    adminsecret:
+      tenantID:
+      clientID:
+      clientSecret:
+EOF
+
+# Update the Git Repo
+git add ./clusters/$ARC_AKS_NAME/aad-pod-identity.yaml && git commit -m "Installing AAD Pod Identity" && git push
+
+# Validate the Deployment
+flux reconcile kustomization flux-system --with-source
+kubectl get helmrelease -A
+kubectl -n aad-pod-identity get pods
 ```
