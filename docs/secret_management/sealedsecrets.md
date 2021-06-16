@@ -25,7 +25,7 @@ metadata:
   name: sealed-secrets
   namespace: sealed-secrets
 spec:
-  interval: 1m0s
+  interval: 10m0s
   url: https://bitnami-labs.github.io/sealed-secrets
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
