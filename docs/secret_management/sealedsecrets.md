@@ -5,6 +5,7 @@ Install Bitnami Sealed Secrets in the clusters.
 
 **Technical Links**
 
+[Blob](https://www.arthurkoziel.com/encrypting-k8s-secrets-with-sealed-secrets/)
 
 **Install Sealed Secrets on the Azure Kubernetes Instance**
 
