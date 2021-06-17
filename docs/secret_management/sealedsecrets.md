@@ -58,4 +58,29 @@ flux reconcile kustomization flux-system --with-source
 kubectl get helmrelease -A
 kubectl -n sealed-secrets get pods
 
+# Create a temporary Secret
+cat > ./secret.yaml <<EOF
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-credentials
+  namespace: default
+type: Opaque
+stringData:
+  username: admin
+  password: t0p-S3cr3t
+EOF
+
+# Seal a Secret
+cat secret.yaml | kubeseal \
+    --controller-namespace sealed-secrets \
+    --controller-name sealed-secrets \
+    --format yaml \
+    > secret-enc.yaml && rm secret.yaml
+
+    
+# Deploy and Validate Secret
+kubectl apply -f secret-enc.yaml --validate=false
+kubectl describe secret -n default app-credentials
 ```
