@@ -1,2 +1,3 @@
 .sops.yaml
-secret*.yaml
+secret.yaml
+secret-enc.yaml
