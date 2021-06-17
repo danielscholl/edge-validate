@@ -5,7 +5,8 @@ Install Bitnami Sealed Secrets in the clusters.
 
 **Technical Links**
 
-[Blob](https://www.arthurkoziel.com/encrypting-k8s-secrets-with-sealed-secrets/)
+[Tutorial](https://www.arthurkoziel.com/encrypting-k8s-secrets-with-sealed-secrets/)
+[Blog](https://blog.sighup.io/sealed-secrets-in-gitops/)
 
 **Install Sealed Secrets on the Azure Kubernetes Instance**
 
@@ -24,7 +25,7 @@ apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: HelmRepository
 metadata:
   name: sealed-secrets
-  namespace: sealed-secrets
+  namespace: flux-system
 spec:
   interval: 10m0s
   url: https://bitnami-labs.github.io/sealed-secrets
@@ -33,7 +34,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: sealed-secrets
-  namespace: sealed-secrets
+  namespace: flux-system
 spec:
   chart:
     spec:
@@ -46,7 +47,7 @@ spec:
     crds: Create
   interval: 10m0s
   releaseName: sealed-secrets
-  targetNamespace: sealed-secrets
+  targetNamespace: kube-system
   upgrade:
     crds: CreateReplace
 EOF
@@ -75,7 +76,7 @@ EOF
 
 # Seal a Secret
 cat secret.yaml | kubeseal \
-    --controller-namespace sealed-secrets \
+    --controller-namespace kube-system \
     --controller-name sealed-secrets \
     --format yaml \
     > secret-enc.yaml && rm secret.yaml
