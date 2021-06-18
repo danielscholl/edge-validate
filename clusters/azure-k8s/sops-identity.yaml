@@ -1,0 +1,19 @@
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: test-identity
+  namespace: default
+spec:
+  clientID: c4533917-580c-49f5-9a29-391a63344eb9
+  resourceID: /subscriptions/2e458de2-af10-484c-a5a5-6c259d9a907f/resourcegroups/azure-k8s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/kv-access-identity
+  type: 0 # user-managed identity
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: test-identity-binding
+  namespace: default
+spec:
+  azureIdentity: test-identity
+  selector: test-identity
