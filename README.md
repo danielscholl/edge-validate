@@ -60,6 +60,7 @@ IDENTITY_ID=$(az identity show -n $IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --que
 # Create a Cluster 
 AKS_NAME="azure-k8s"
 az aks create -g $RESOURCE_GROUP -n $AKS_NAME \
+    --network-plugin azure \
     --enable-managed-identity  \
     --assign-identity $IDENTITY_ID \
     --generate-ssh-keys
@@ -69,6 +70,15 @@ az aks get-credentials -g $RESOURCE_GROUP -n $AKS_NAME
 
 # Validate the Cluster
 kubectl cluster-info --context $AKS_NAME
+
+# Setup the Proper Roles necessary for AAD Pod Identity
+KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
+NODE_GROUP=$(az aks show -g ${RESOURCE_GROUP} -n $AKS_NAME --query nodeResourceGroup -o tsv)
+NODES_RESOURCE_ID=$(az group show -n $NODE_GROUP -o tsv --query "id")
+
+# Assign Roles:  "Virtual Machine Contributor" and "Managed Identity Operator"
+az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $NODES_RESOURCE_ID
+az role assignment create --role "Virtual Machine Contributor" --assignee "$KUBENET_ID" --scope $NODES_RESOURCE_ID
 ```
 
 

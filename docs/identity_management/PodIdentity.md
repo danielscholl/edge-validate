@@ -6,14 +6,19 @@ Install AAD Pod Identity in the clusters.
 **Technical Links**
 [AAD Pod Identity with Kubenet](https://azure.github.io/aad-pod-identity/docs/configure/aad_pod_identity_on_kubenet/)
 [AAD Pod Identity Managed Mode](https://azure.github.io/aad-pod-identity/docs/configure/pod_identity_in_managed_mode/)
+[Blog](https://opensourcelibs.com/lib/aad-pod-identity)
 
 
 **Install AAD Pod Identity on the Azure Kubernetes Instance**
 
+This method of installation utilizes flux so gitops should be configured prior to running this step.
+
 ```bash
+RESOURCE_GROUP="azure-k8s"
 AKS_NAME="azure-k8s"
 kubectl config use-context $AKS_NAME
 
+# Install AAD Pod Identity (kubenet roles should already be configured)
 cat > ./clusters/$AKS_NAME/aad-pod-identity.yaml <<EOF
 ---
 apiVersion: v1
@@ -40,15 +45,12 @@ spec:
   chart:
     spec:
       chart: aad-pod-identity
-      version: 4.0.0
+      version: 4.1.1
       sourceRef:
         kind: HelmRepository
         name: aad-pod-identity
         namespace: aad-pod-identity
       interval: 1m
-  values:
-    nmi:
-      allowNetworkPluginKubenet: true
 EOF
 
 # Update the Git Repo
@@ -63,22 +65,86 @@ kubectl -n aad-pod-identity get pods
 Create the Identity and Binding
 
 ```bash
-POD_IDENTITY_NAME="kv-access-identity"
 RESOURCE_GROUP="azure-k8s"
 AKS_NAME="azure-k8s"
+IDENTITY="test-identity"
 
-# Retrieve Required Identity Values
-POD_IDENTITY_CLIENT_ID=$(az identity show -n $POD_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "clientId")
-POD_IDENTITY_ID=$(az identity show -n $POD_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "id")
+# Create POD Identity
+az identity create --resource-group ${RESOURCE_GROUP} --name ${IDENTITY}
+POD_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${IDENTITY} --query id -otsv)"
+POD_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${IDENTITY} --query clientId -otsv)"
+KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
+az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $POD_IDENTITY_ID
+
 
 # Create or Update the AzureIdentity and Binding
+# Deploy Test Pod
+cat <<EOF | kubectl apply --namespace default -f -
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: test-identity
+  namespace: default
+spec:
+  type: 0
+  resourceID: $POD_IDENTITY_ID
+  clientID: $POD_IDENTITY_CLIENT_ID
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: test-identity-binding
+  namespace: default
+spec:
+  azureIdentity: test-identity
+  selector: test-identity
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: identity-test
+  labels:
+    aadpodidbinding: test-identity
+spec:
+  containers:
+  - name: identity-test
+    image: mcr.microsoft.com/oss/azure/aad-pod-identity/demo:v1.6.3
+    args:
+      - --subscriptionid=$(az account show --query id -otsv)
+      - --clientid=${POD_IDENTITY_CLIENT_ID}
+      - --resourcegroup=${RESOURCE_GROUP}
+    env:
+      - name: MY_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      - name: MY_POD_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+  nodeSelector:
+    kubernetes.io/os: linux
+EOF
+
+# Validate
+kubectl logs demo
+
+
+
+
+# Install the Sops Identity
 cat > ./clusters/$AKS_NAME/sops-identity.yaml <<EOF
 ---
 apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentity
 metadata:
-  name: sops-akv-decryptor
-  namespace: flux-system
+  name: test-identity
+  namespace: default
 spec:
   clientID: $POD_IDENTITY_CLIENT_ID
   resourceID: $POD_IDENTITY_ID
@@ -87,22 +153,14 @@ spec:
 apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentityBinding
 metadata:
-  name: sops-akv-decryptor-binding
-  namespace: flux-system
+  name: test-identity-binding
+  namespace: default
 spec:
-  azureIdentity: sops-akv-decryptor
-  selector: sops-akv-decryptor
+  azureIdentity: test-identity
+  selector: test-identity
 EOF
-
-# Update the Git Repo to deploy
-git add ./clusters/$AKS_NAME/sops-identity.yaml && git commit -m "Updated Identity and Binding" && git push
-
-# Validate the Deployment
-flux reconcile kustomization flux-system --with-source
-kubectl -n flux-system describe AzureIdentity
 ```
 
----
 
 **ARC Enabled Instance**
 

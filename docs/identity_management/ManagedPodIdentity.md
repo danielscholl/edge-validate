@@ -21,14 +21,14 @@ az role assignment create --role "Managed Identity Operator" --assignee "$APP_ID
 
 # Create Application Pod Identity
 POD_IDENTITY="test-pod-identity"
-NAMESPACE="demoapp"
+NAMESPACE="default"
 az aks pod-identity add --name ${POD_IDENTITY} --resource-group $RESOURCE_GROUP --cluster-name $AKS_NAME --namespace ${NAMESPACE} --identity-resource-id ${APP_IDENTITY_RESOURCE_ID}
 
 # Validate Pod Identity
 az aks pod-identity list --cluster-name $AKS_NAME --resource-group $RESOURCE_GROUP -otable
 
 # Deploy Test Pod
-cat <<EOF | kubectl apply --namespace demoapp -f -
+cat <<EOF | kubectl apply --namespace default -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -61,5 +61,5 @@ spec:
 EOF
 
 # Validate the Pod
-kubectl logs identity-test --namespace demoapp
+kubectl logs identity-test --namespace default
 ```
