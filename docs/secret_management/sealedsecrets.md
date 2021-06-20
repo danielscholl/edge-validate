@@ -81,12 +81,13 @@ cat secret.yaml | kubeseal \
     --controller-namespace kube-system \
     --controller-name sealed-secrets \
     --format yaml \
-    > secret-enc.yaml && rm secret.yaml
+    > ./clusters/$AKS_NAME/secret-enc.yaml && rm secret.yaml
 
     
 # Deploy and Validate Secret
-kubectl apply -f secret-enc.yaml
+git add ./clusters/$AKS_NAME/secret-enc.yaml && git commit -m "Add Secret" && git push
 kubectl describe secret -n default app-credentials
+
 ```
 
 

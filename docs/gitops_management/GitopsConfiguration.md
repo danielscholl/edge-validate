@@ -18,7 +18,7 @@ Install the config-agent in the cluster which deploys a flux operator to watch t
 RESOURCE_GROUP="azure-k8s"
 ARC_AKS_NAME="kind-k8s"
 
-kubectl config use-context kind-kind
+kubectl config use-context "kind-$ARC_AKS_NAME"
 
 # Deploy Sample App
 az k8s-configuration create \

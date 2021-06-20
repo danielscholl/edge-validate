@@ -1,12 +1,12 @@
 # Instructions for Setting up Key Vault
 
-
 Create a Key Vault with a User Managed Identity the access policy and the Azure Identity
 
 ```bash
 VAULT_NAME="azure-k8s-vault"
 RESOURCE_GROUP="azure-k8s"
 LOCATION="eastus"
+kubectl config use-context $AKS_NAME
 
 # Create Key Vault
 az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
@@ -117,6 +117,7 @@ Create a secret
 ```bash
 VAULT_NAME="azure-k8s-vault"
 RESOURCE_GROUP="azure-k8s"
+AKS_NAME="azure-k8s"
 
 # Ensure signed in user can encrypt and decrypt
 OID=$(az ad signed-in-user show -o tsv --query objectId)
@@ -128,8 +129,8 @@ cat > ./secret.yaml <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: demoapp-credentials
-  namespace: demoapp
+  name: sops-secret-credentials
+  namespace: default
 type: Opaque
 stringData:
   username: admin
@@ -137,8 +138,8 @@ stringData:
 EOF
 
 # Encrypt a Secret
-sops --encrypt secret.yaml > secret-enc.yaml && rm secret.yaml
+sops --encrypt secret.yaml > ./clusters/$AKS_NAME/sops-secret-enc.yaml && rm secret.yaml
+git add ./clusters/$AKS_NAME/sops-secret-enc.yaml && git commit -m "Add Secret" && git push
 
 # Deploy and Validate Secret
-kubectl apply -f secret-enc.yaml --validate=false
-kubectl describe secret -n demoapp demoapp-credentials
+kubectl describe secret sops-secret-credentials

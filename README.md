@@ -71,12 +71,11 @@ az aks get-credentials -g $RESOURCE_GROUP -n $AKS_NAME
 # Validate the Cluster
 kubectl cluster-info --context $AKS_NAME
 
-# Setup the Proper Roles necessary for AAD Pod Identity
+# Assign Kubelet Roles required for AAD Pod Identity
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
 NODE_GROUP=$(az aks show -g ${RESOURCE_GROUP} -n $AKS_NAME --query nodeResourceGroup -o tsv)
 NODES_RESOURCE_ID=$(az group show -n $NODE_GROUP -o tsv --query "id")
 
-# Assign Roles:  "Virtual Machine Contributor" and "Managed Identity Operator"
 az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $NODES_RESOURCE_ID
 az role assignment create --role "Virtual Machine Contributor" --assignee "$KUBENET_ID" --scope $NODES_RESOURCE_ID
 ```
@@ -100,7 +99,7 @@ kind create cluster --name $ARC_AKS_NAME
 az connectedk8s connect -n $ARC_AKS_NAME -g $RESOURCE_GROUP
 
 # Validate ARC agents
-kubectl cluster-info --context $ARC_AKS_NAME
+kubectl cluster-info --context "kind-$ARC_AKS_NAME"
 kubectl get pods -n azure-arc
 ```
 
@@ -156,16 +155,16 @@ kubectl get pods -n azure-arc
 
 **Options**
 
-1. AAD Pod Identity
+1. AAD Pod Identity using MIC
 
-    [Instructions](././docs/identity_management/PodIdentity.md)
+    [Instructions](./docs/identity_management/PodIdentity.md)
 
         [X] AKS Cloud
         [ ] ARC Enabled AKS
 
         Notes
         ----------------
-        1. Can be managed or not managed
+        1. This is the common way of configuration for AKS.
 
 
 ![diagram](./docs/images/aad_pod_identity.png)
@@ -179,14 +178,13 @@ kubectl get pods -n azure-arc
 
         Notes
         ----------------
-        1. This is leveraging the AKS Plugins and only works in cloud AKS.
+        1. This is the coming new way of configuration for AKS with extenions.
 
 
 3. System Assigned Identity
 
     [Documentation]()
 
-        [ ] AKS Cloud
         [ ] ARC Enabled AKS
 
         Questions Raised
@@ -201,29 +199,6 @@ TODO:// Document and validate how System Assigned Identities can be used in ARC 
 ## Validation - Secret Management
 
 This validation requires an Azure Key Vault to be provisioned.
-
-### Setup Azure KeyVault
-
-```bash
-VAULT_NAME="azure-k8s-vault"
-RESOURCE_GROUP="azure-k8s"
-LOCATION="eastus"
-
-# Create Key Vault
-az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
-
-# Create a Cryptographic Key
-az keyvault key create --name sops-key --vault-name $VAULT_NAME --protection software --ops encrypt decrypt
-
-# Create a User Managed Identity
-KV_IDENTITY_NAME="kv-access-identity"
-az identity create -n $KV_IDENTITY_NAME -g $RESOURCE_GROUP -l $LOCATION
-KV_IDENTITY_OID=$(az identity show -n $KV_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "principalId")
-KV_IDENTITY_ID=$(az identity show -n $KV_IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "id")
-
-# Add Access Policy for Managed Identity
-az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_IDENTITY_OID --key-permissions encrypt decrypt
-```
 
 **Technical Links**
 - [Tech Blog](https://techcommunity.microsoft.com/t5/azure-global/gitops-and-secret-management-with-aks-flux-cd-sops-and-azure-key/ba-p/2280068)

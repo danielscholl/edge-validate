@@ -132,33 +132,8 @@ spec:
 EOF
 
 # Validate
-kubectl logs demo
+kubectl logs identity-test
 
-
-
-
-# Install the Sops Identity
-cat > ./clusters/$AKS_NAME/sops-identity.yaml <<EOF
----
-apiVersion: aadpodidentity.k8s.io/v1
-kind: AzureIdentity
-metadata:
-  name: test-identity
-  namespace: default
-spec:
-  clientID: $POD_IDENTITY_CLIENT_ID
-  resourceID: $POD_IDENTITY_ID
-  type: 0 # user-managed identity
----
-apiVersion: aadpodidentity.k8s.io/v1
-kind: AzureIdentityBinding
-metadata:
-  name: test-identity-binding
-  namespace: default
-spec:
-  azureIdentity: test-identity
-  selector: test-identity
-EOF
 ```
 
 
