@@ -60,6 +60,7 @@ IDENTITY_ID=$(az identity show -n $IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --que
 # Create a Cluster 
 AKS_NAME="azure-k8s"
 az aks create -g $RESOURCE_GROUP -n $AKS_NAME \
+    --network-plugin azure \
     --enable-managed-identity  \
     --assign-identity $IDENTITY_ID \
     --generate-ssh-keys
@@ -69,6 +70,15 @@ az aks get-credentials -g $RESOURCE_GROUP -n $AKS_NAME
 
 # Validate the Cluster
 kubectl cluster-info --context $AKS_NAME
+
+# Setup the Proper Roles necessary for AAD Pod Identity
+KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
+NODE_GROUP=$(az aks show -g ${RESOURCE_GROUP} -n $AKS_NAME --query nodeResourceGroup -o tsv)
+NODES_RESOURCE_ID=$(az group show -n $NODE_GROUP -o tsv --query "id")
+
+# Assign Roles:  "Virtual Machine Contributor" and "Managed Identity Operator"
+az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $NODES_RESOURCE_ID
+az role assignment create --role "Virtual Machine Contributor" --assignee "$KUBENET_ID" --scope $NODES_RESOURCE_ID
 ```
 
 
@@ -226,13 +236,15 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
     Sealed Secrets require an additional controller and a new SealedSecret CRD that is safe to store in a Git Repository.  After flux applies the SealedSecret object, the controller decrypts the sealed secret and applies the plain secrets.
 
-    [Instruction Documentation]()
+    [Instruction Documentation](./docs/secret_management/sealedsecrets.md)
 
-        [ ] AKS Cloud
-        [ ] ARC Enabled AKS
+        [X] AKS Cloud
+        [X] ARC Enabled AKS
 
-        Questions Raised
+        Notes
         ----------------
+        1. In  order to seal a secret access to the controller by kubectl must exist.
+
 
 ![diagram](./docs/images/sealed_secret_diagram.png)
 
@@ -247,8 +259,9 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
         [X] AKS Cloud
         [ ] ARC Enabled AKS
 
-        Questions Raised
+        Notes
         ----------------
+        1. AAD Identity needs to be configured prior to working secrets this way in order to access the KV.
         1. Can a system assigned identity be used on Arc Enabled Kubernetes to access Key Vault?
 
 
