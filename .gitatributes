@@ -1,3 +1,8 @@
 * text=auto eol=lf
+
+# Convert to LF line endings on checkout.
+*.sh text eol=lf
+
+# Convert to CRLF line endings on checkout.
 *.{cmd,[cC][mM][dD]} text eol=crlf
 *.{bat,[bB][aA][tT]} text eol=crlf
