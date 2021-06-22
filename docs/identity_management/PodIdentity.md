@@ -33,7 +33,7 @@ metadata:
   namespace: aad-pod-identity
 spec:
   url: https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
-  interval: 10m
+  interval: 5m
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
@@ -69,13 +69,13 @@ RESOURCE_GROUP="azure-k8s"
 AKS_NAME="azure-k8s"
 IDENTITY="test-identity"
 
-# Create a managed Identity
-az identity create --resource-group ${RESOURCE_GROUP} --name ${IDENTITY}
+# Create a test Managed Identity
+az identity create --resource-group $RESOURCE_GROUP --name $IDENTITY
 
 # Assign a Role
-POD_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${IDENTITY} --query id -otsv)"
-POD_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${IDENTITY} --query clientId -otsv)"
-KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
+POD_IDENTITY_ID="$(az identity show -g $RESOURCE_GROUP -n $IDENTITY --query id -otsv)"
+POD_IDENTITY_CLIENT_ID="$(az identity show -g $RESOURCE_GROUP -n $IDENTITY --query clientId -otsv)"
+KUBENET_ID="$(az aks show -g $RESOURCE_GROUP -n $AKS_NAME --query identityProfile.kubeletidentity.clientId -otsv)"
 az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $POD_IDENTITY_ID
 
 

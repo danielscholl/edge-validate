@@ -46,7 +46,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: csi-secrets-store-provider-azure
-      version: 0.0.20
+      version: 0.0.19
   install: {}
   interval: 5m0s
   targetNamespace: csi-driver
@@ -54,14 +54,16 @@ EOF
 
 # Update the Git Repo
 git add ./clusters/$AKS_NAME/csi-driver.yaml && git commit -m "Installing KV CSI Driver" && git push
+flux reconcile kustomization flux-system --with-source
 
 # Validate the Deployment
-flux get sources helm -n csi-driver
-flux get helmreleases -n csi-driver
+kubectl get helmrelease -A
+flux get sources helm -A
+flux get helmreleases -A
 kubectl -n csi-driver get pods
 ```
 
-Create an identity to access the Key Vault Secrets
+Create a pod identity to access the Key Vault Secrets
 
 ```bash
 KV_IDENTITY_NAME="kv-access-identity"
@@ -70,8 +72,8 @@ KV_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
 
 
-# Create a KV Identity
-cat > ./clusters/$AKS_NAME/kv-identity.yaml <<EOF
+# Create the Pod Identity and Binding
+cat <<EOF | kubectl apply --namespace default -f -
 ---
 apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentity
@@ -94,11 +96,7 @@ spec:
 EOF
 
 
-# Update the Git Repo to deploy
-git add ./clusters/$AKS_NAME/kv-identity.yaml && git commit -m "KV Identity" && git push
-
 # Validate the Deployment
-flux reconcile kustomization flux-system --with-source
 kubectl get AzureIdentity -A
 kubectl get AzureIdentityBinding -A
 ```
@@ -107,11 +105,9 @@ Add a Secret Provider Class
 
 ```bash
 TENANT_ID=$(az account show --query tenantId -otsv)
-SUBSCRIPTION_ID=$(az account show --query id -otsv)
-RESOURCE_GROUP="azure-k8s"
 VAULT_NAME="azure-k8s-vault"
+KV_IDENTITY_NAME="kv-access-identity"
 
-# Deploy a sample Pod with a Secret from KV
 # Deploy Secret Provider Class
 cat <<EOF | kubectl apply --namespace default -f -
 ---
@@ -175,10 +171,8 @@ spec:
               key: admin-password
 EOF
 
-
 # Validate
 kubectl exec vault-test -- ls /mnt/azure-keyvault/
 kubectl exec vault-test -- cat /mnt/azure-keyvault/admin
 kubectl exec vault-test -- env |grep ADMIN_PASSWORD
-
 ```
