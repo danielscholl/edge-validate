@@ -27,7 +27,7 @@ apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: HelmRepository
 metadata:
   name: sealed-secrets
-  namespace: flux-system
+  namespace: sealed-secrets
 spec:
   interval: 10m0s
   url: https://bitnami-labs.github.io/sealed-secrets
@@ -36,7 +36,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: sealed-secrets
-  namespace: flux-system
+  namespace: sealed-secrets
 spec:
   chart:
     spec:
@@ -62,13 +62,17 @@ flux reconcile kustomization flux-system --with-source
 kubectl get helmrelease -A
 kubectl -n kube-system get pods
 
-# Create a temporary Secret
-cat > ./secret.yaml <<EOF
+# Create a Secret
+
+cat <<EOF | kubeseal \
+    --controller-namespace kube-system \
+    --controller-name sealed-secrets \
+    --format yaml | kubectl apply --namespace default -f -
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: app-credentials
+  name: sealed-secret
   namespace: default
 type: Opaque
 stringData:
@@ -76,18 +80,8 @@ stringData:
   password: t0p-S3cr3t
 EOF
 
-# Seal a Secret
-cat secret.yaml | kubeseal \
-    --controller-namespace kube-system \
-    --controller-name sealed-secrets \
-    --format yaml \
-    > ./clusters/$AKS_NAME/secret-enc.yaml && rm secret.yaml
-
-    
-# Deploy and Validate Secret
-git add ./clusters/$AKS_NAME/secret-enc.yaml && git commit -m "Add Secret" && git push
-kubectl describe secret -n default app-credentials
-
+# Validate Secret
+kubectl describe secret sealed-secret
 ```
 
 

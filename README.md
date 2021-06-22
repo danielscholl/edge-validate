@@ -307,6 +307,7 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
         Notes
         ----------------
         1. AKS implementation future method default method would be to enable Pod Identity and KV CSI Driver by native AKS functionality.
+        2. Azure CSI Driver 0.0.20 doesn't work with mapped secrets.  Using 0.0.19
 
 
 ![diagram](./docs/images/csi_driver_diagram.png)
