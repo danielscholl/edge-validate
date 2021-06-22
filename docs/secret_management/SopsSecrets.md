@@ -11,14 +11,13 @@ KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} -
 KV_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query clientId -otsv)"
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
 
-
 # Create a KV Sops Identity
-cat > ./clusters/$AKS_NAME/sops-identity.yaml <<EOF
+cat <<EOF | kubectl apply --namespace default -f -
 ---
 apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentity
 metadata:
-  name: kv-access-identity
+  name: sops-access-identity
   namespace: default
 spec:
   clientID: $KV_IDENTITY_CLIENT_ID
@@ -28,15 +27,12 @@ spec:
 apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentityBinding
 metadata:
-  name: kv-access-identity-binding
+  name: sops-access-identity-binding
   namespace: default
 spec:
-  azureIdentity: kv-access-identity
+  azureIdentity: sops-access-identity
   selector: sops-akv-decryptor
 EOF
-
-# Update the Git Repo to deploy
-git add ./clusters/$AKS_NAME/sops-identity.yaml && git commit -m "KV Identity" && git push
 
 # Create the Patch
 cat > ./clusters/$AKS_NAME/flux-system/gotk-patches.yaml <<EOF
@@ -120,8 +116,8 @@ stringData:
 EOF
 
 # Encrypt a Secret
-sops --encrypt secret.yaml > ./clusters/$AKS_NAME/sops-secret-enc.yaml && rm secret.yaml
-git add ./clusters/$AKS_NAME/sops-secret-enc.yaml && git commit -m "Add Secret" && git push
+sops --encrypt secret.yaml > ./sops-secret-enc.yaml && rm secret.yaml
+kubectl apply -f ./sops-secret-enc.yaml --validate=false && rm sops-secret-enc.yaml
 
 # Deploy and Validate Secret
 kubectl describe secret sops-secret-credentials
