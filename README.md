@@ -127,35 +127,32 @@ Additionally to uninstall flux from a cluster the following command can be run `
 [GitOps Configurations](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/conceptual-configurations) is a microsoft managed method for enabling GitOps practices on an ARC enabled Cluster using Flux.
 
 
-**Options**
 
-1. Unmanaged Flux Configuration
+**Option 1 -- Flux Configuration** -- [Configuration Instructions](./docs/gitops_management/FluxSetup.md)
 
-    [Instructions](./docs/gitops_management/FluxSetup.md)
+    [X] AKS Cloud
+    [X] ARC Enabled AKS
 
-        [X] AKS Cloud
-        [X] ARC Enabled AKS
-
-        Notes
-        ----------------
-        1. This leverages kustomizations controllers with a single source of truth Git Repository for the cluster.
-        2. Will work regardless of Azure or Edge.
-
+    Notes
+    ----------------
+    1. This leverages kustomizations controllers with a single source of truth Git Repository for the cluster.
+    2. Will work regardless of Azure or Edge.
 
 ![diagram](./docs/images/flux_diagram.png)
 
 
-2. Managed Flux with ARC Enabled Kubernetes Gitops Configuration
 
-    [Instructions](././docs/gitops_management/GitopsConfiguration.md)
 
-        [X] ARC Enabled AKS
 
-        Notes
-        ----------------
-        1. This is a feature only available to an ARC Enabled Cluster.
-        2. Removes the need to configure flux on the server as ARC manages the flux setup.
-        3. Utilizes Flux v1 but will be updated to v2.
+**Option 2 -- Gitops Configuration Extension** -- [Configuration Instructions](././docs/gitops_management/GitopsConfiguration.md)
+
+    [X] ARC Enabled AKS
+
+    Notes
+    ----------------
+    1. This is a feature only available to an ARC Enabled Cluster.
+    2. Removes the need to configure flux on the server as ARC manages the flux setup.
+    3. Utilizes Flux v1 but will be updated to v2.
 
 ![diagram](./docs/images/arc_gitops_diagram.png)
 
