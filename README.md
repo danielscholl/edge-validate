@@ -143,7 +143,6 @@ Additionally to uninstall flux from a cluster the following command can be run `
 
 
 
-
 **Option 2 -- Gitops Configuration Extension** -- [Configuration Instructions](././docs/gitops_management/GitopsConfiguration.md)
 
     [X] ARC Enabled AKS
@@ -165,45 +164,35 @@ Additionally to uninstall flux from a cluster the following command can be run `
 - [AAD Pod Identity](https://docs.microsoft.com/en-us/azure/aks/use-azure-ad-pod-identity)
 
 
-**Options**
+**Option 1 -- AAD Pod Identity using MIC** -- [Configuration Instructions](./docs/identity_management/PodIdentity.md)
 
-1. AAD Pod Identity using MIC
+    [X] AKS Cloud
+    [ ] ARC Enabled AKS
 
-    [Instructions](./docs/identity_management/PodIdentity.md)
-
-        [X] AKS Cloud
-        [ ] ARC Enabled AKS
-
-        Notes
-        ----------------
-        1. This is the common way of configuration for AKS.
+    Notes
+    ----------------
+    1. This is the common way of configuration for AKS.
 
 
 ![diagram](./docs/images/aad_pod_identity.png)
 
 
-2. Managed Pod Identity 
+**Option 2 -- Managed Pod Identity** -- [Configuration Instructions](./docs/identity_management/ManagedPodIdentity.md)
 
-    [Instructions](././docs/identity_management/ManagedPodIdentity.md)
+    [X] AKS Cloud
 
-        [X] AKS Cloud
-
-        Notes
-        ----------------
-        1. This is the coming new way of configuration for AKS with extenions.
+    Notes
+    ----------------
+    1. This is the coming new way of configuration for AKS with extenions.
 
 
-3. System Assigned Identity
+**Option 3 -- System Assigned Identity** -- [Configuration Instructions]()
 
-    [Documentation]()
+    [ ] ARC Enabled AKS
 
-        [ ] ARC Enabled AKS
-
-        Questions Raised
-        ----------------
-        1. ARC Clusters can only leverage a System Assigned Identity.  Is the meta API still available to be called and how?
-
-TODO:// Document and validate how System Assigned Identities can be used in ARC enabled Kubernetes
+    Questions Raised
+    ----------------
+    1. ARC Clusters can only leverage a System Assigned Identity.  Is the meta API still available to be called and how?
 
 ![diagram](./docs/images/identity_diagram.png)
 
@@ -249,39 +238,37 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 - [Managing Secrets Blog](https://dzone.com/articles/managing-kubernetes-secrets)
 - [Azure Arc Blog](https://www.cloudwithchris.com/blog/azure-arc-for-apps-part-1/)
 
-**Options**
 
-1. Bitnami's [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)
+**Option 1 -- Bitnami's [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)** -- [Configuration Instructions](./docs/secret_management/sealedsecrets.md)
 
-    Sealed Secrets require an additional controller and a new SealedSecret CRD that is safe to store in a Git Repository.  After flux applies the SealedSecret object, the controller decrypts the sealed secret and applies the plain secrets.
 
-    [Instruction Documentation](./docs/secret_management/sealedsecrets.md)
+Sealed Secrets require an additional controller and a new SealedSecret CRD that is safe to store in a Git Repository.  After flux applies the SealedSecret object, the controller decrypts the sealed secret and applies the plain secrets.
 
-        [X] AKS Cloud
-        [X] ARC Enabled AKS
 
-        Notes
-        ----------------
-        1. In  order to seal a secret access to the controller by kubectl must exist.
+    [X] AKS Cloud
+    [X] ARC Enabled AKS
+
+    Notes
+    ----------------
+    1. In  order to seal a secret access to the controller by kubectl must exist.
 
 
 ![diagram](./docs/images/sealed_secret_diagram.png)
 
 
 
-2. Mozilla's [SOPS](https://github.com/mozilla/sops)
+**Option 1 -- Mozilla's [SOPS](https://github.com/mozilla/sops)** -- [Configuration Instructions](./docs/secret_management/SopsSecrets.md)
 
-    Unlike Sealed Secrets, SOPS does not require any additional controller because Flux's kustomize-controller can perform the decryption of the secrets. SOPS has integration with Azure Key Vault to store the cryptographic used to encrypt and decrypt the secrets. Access to Key Vault is performed with an Azure Identity.
+Unlike Sealed Secrets, SOPS does not require any additional controller because Flux's kustomize-controller can perform the decryption of the secrets. SOPS has integration with Azure Key Vault to store the cryptographic used to encrypt and decrypt the secrets. Access to Key Vault is performed with an Azure Identity.
 
-    [Instruction Documentation](./docs/secret_management/SopsSecrets.md)
 
-        [X] AKS Cloud
-        [ ] ARC Enabled AKS
+    [X] AKS Cloud
+    [ ] ARC Enabled AKS
 
-        Notes
-        ----------------
-        1. AAD Identity needs to be configured prior to working secrets this way in order to access the KV.
-        1. Can a system assigned identity be used on Arc Enabled Kubernetes to access Key Vault?
+    Notes
+    ----------------
+    1. AAD Identity needs to be configured prior to working secrets this way in order to access the KV.
+    1. Can a system assigned identity be used on Arc Enabled Kubernetes to access Key Vault?
 
 
 ![diagram](./docs/images/sops_diagram.png)
@@ -289,22 +276,22 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
 
 
-3. Azure Key Vault Provider for Secrets Store [CSI Driver](https://github.com/Azure/secrets-store-csi-driver-provider-azure)
+**Option 1 -- Azure Key Vault Provider for Secrets Store [CSI Driver](https://github.com/Azure/secrets-store-csi-driver-provider-azure)** -- [Configuration Instructions](./docs/secret_management/CsiDriver.md)
 
-    This approach allows us to define our secrets in Key Vault and automatically make them available as Kubernetes secrets.
-    This option might be seen as breaking the GitOps workflow where the Git repository is the single source of truth for application desired state.
+This approach allows us to define our secrets in Key Vault and automatically make them available as Kubernetes secrets.
+This option might be seen as breaking the GitOps workflow where the Git repository is the single source of truth for application desired state.
 
-    **!** This method is the method used for OSDU on Azure.
+**!** This method is the method used for OSDU on Azure.
 
-    [Instruction Documentation](./docs/secret_management/CsiDriver.md)
 
-        [X] AKS Cloud
-        [ ] ARC Enabled AKS
 
-        Notes
-        ----------------
-        1. AKS implementation future method default method would be to enable Pod Identity and KV CSI Driver by native AKS functionality.
-        2. Azure CSI Driver 0.0.20 doesn't work with mapped secrets.  Using 0.0.19
+    [X] AKS Cloud
+    [ ] ARC Enabled AKS
+
+    Notes
+    ----------------
+    1. AKS implementation future method default method would be to enable Pod Identity and KV CSI Driver by native AKS functionality.
+    2. Azure CSI Driver 0.0.20 doesn't work with mapped secrets.  Using 0.0.19
 
 
 ![diagram](./docs/images/csi_driver_diagram.png)
@@ -312,13 +299,11 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
 
 
-4. Azure Key Vault to Kubernetes [(akv2k8s)](https://akv2k8s.io/)
+**Option 1 -- Azure Key Vault to Kubernetes [(akv2k8s)](https://akv2k8s.io/)** -- [Configuration Instructions]()
 
-    This makes Azure Key Vault secrets, certificates and keys available in Kubernetes in a simple secure way leveraging the 12 Factor App principals and includes a controller pattern as well as an injector pattern.
+This makes Azure Key Vault secrets, certificates and keys available in Kubernetes in a simple secure way leveraging the 12 Factor App principals and includes a controller pattern as well as an injector pattern.
 
-    [Instruction Documentation]()
-
-        [ ] AKS Cloud
-        [ ] ARC Enabled AKS
+    [ ] AKS Cloud
+    [ ] ARC Enabled AKS
 
 ![diagram](./docs/images/akv2k8s_diagram.png)
