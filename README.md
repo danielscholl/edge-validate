@@ -257,7 +257,7 @@ Sealed Secrets require an additional controller and a new SealedSecret CRD that 
 
 
 
-**Option 1 -- Mozilla's [SOPS](https://github.com/mozilla/sops)** -- [Configuration Instructions](./docs/secret_management/SopsSecrets.md)
+**Option 2 -- Mozilla's [SOPS](https://github.com/mozilla/sops)** -- [Configuration Instructions](./docs/secret_management/SopsSecrets.md)
 
 Unlike Sealed Secrets, SOPS does not require any additional controller because Flux's kustomize-controller can perform the decryption of the secrets. SOPS has integration with Azure Key Vault to store the cryptographic used to encrypt and decrypt the secrets. Access to Key Vault is performed with an Azure Identity.
 
@@ -276,7 +276,7 @@ Unlike Sealed Secrets, SOPS does not require any additional controller because F
 
 
 
-**Option 1 -- Azure Key Vault Provider for Secrets Store [CSI Driver](https://github.com/Azure/secrets-store-csi-driver-provider-azure)** -- [Configuration Instructions](./docs/secret_management/CsiDriver.md)
+**Option 3 -- Azure Key Vault Provider for Secrets Store [CSI Driver](https://github.com/Azure/secrets-store-csi-driver-provider-azure)** -- [Configuration Instructions](./docs/secret_management/CsiDriver.md)
 
 This approach allows us to define our secrets in Key Vault and automatically make them available as Kubernetes secrets.
 This option might be seen as breaking the GitOps workflow where the Git repository is the single source of truth for application desired state.
@@ -299,7 +299,7 @@ This option might be seen as breaking the GitOps workflow where the Git reposito
 
 
 
-**Option 1 -- Azure Key Vault to Kubernetes [(akv2k8s)](https://akv2k8s.io/)** -- [Configuration Instructions]()
+**Option 4 -- Azure Key Vault to Kubernetes [(akv2k8s)](https://akv2k8s.io/)** -- [Configuration Instructions]()
 
 This makes Azure Key Vault secrets, certificates and keys available in Kubernetes in a simple secure way leveraging the 12 Factor App principals and includes a controller pattern as well as an injector pattern.
 
