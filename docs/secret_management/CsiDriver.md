@@ -7,7 +7,7 @@ Install the CSI Driver for Azure Key Vault in the clusters.
 
 [Kubecon Session](https://www.youtube.com/watch?v=w0k7MI6sCJg)
 [Blog](https://www.linkedin.com/pulse/gitops-part-1-girish-goudar-1c?trk=read_related_article-card_title)
-[Blob](https://ahmedkhamessi.com/2020-10-15-Synchronize-Kubernetes-Secrets-AKV/)
+[Blog](https://ahmedkhamessi.com/2020-10-15-Synchronize-Kubernetes-Secrets-AKV/)
 [Documentation](https://docs.microsoft.com/en-us/azure/aks/csi-secrets-store-driver)
 
 
@@ -17,6 +17,7 @@ Install the CSI Driver for Azure Key Vault in the clusters.
 AKS_NAME="azure-k8s"
 kubectl config use-context $AKS_NAME
 
+#########
 cat > ./clusters/$AKS_NAME/csi-driver.yaml <<EOF
 ---
 apiVersion: v1
@@ -111,6 +112,7 @@ RESOURCE_GROUP="azure-k8s"
 VAULT_NAME="azure-k8s-vault"
 
 # Deploy a sample Pod with a Secret from KV
+# Deploy Secret Provider Class
 cat <<EOF | kubectl apply --namespace default -f -
 ---
 apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
@@ -121,11 +123,7 @@ spec:
   provider: azure
   parameters:
     usePodIdentity: "true"
-    useVMManagedIdentity: "false"
-    userAssignedIdentityID: ""
-    resourceGroup: "$RESOURCE_GROUP"
     keyvaultName: "$VAULT_NAME"
-    subscriptionId: "$SUBSCRIPTION_ID"
     tenantId: "$TENANT_ID"
     objects:  |
       array:
@@ -133,11 +131,15 @@ spec:
           objectName: admin
           objectType: secret
   secretObjects:
-  - secretName: key-vault-secret
+  - secretName: key-vault-secrets
     type: Opaque
     data:
     - objectName: admin
-      key: secret-content
+      key: admin-password
+EOF
+
+# Deploy Test Pod
+cat <<EOF | kubectl apply --namespace default -f -
 ---
 apiVersion: v1
 kind: Pod
@@ -145,7 +147,7 @@ metadata:
   name: vault-test
   namespace: default
   labels:
-    aadpodidbinding: kv-access-identity
+    aadpodidbinding: $KV_IDENTITY_NAME
 spec:
   volumes:
     - name: azure-keyvault
@@ -166,14 +168,17 @@ spec:
           mountPath: "/mnt/azure-keyvault"
           readOnly: true
       env:
-        - name: KEYVAULT_SECRET
+        - name: ADMIN_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: key-vault-secret
-              key: secret-content
+              name: key-vault-secrets
+              key: admin-password
 EOF
+
 
 # Validate
 kubectl exec vault-test -- ls /mnt/azure-keyvault/
 kubectl exec vault-test -- cat /mnt/azure-keyvault/admin
+kubectl exec vault-test -- env |grep ADMIN_PASSWORD
+
 ```

@@ -17,7 +17,9 @@ az account set --subscription <your_subscription>
 
 # Enable Preview Features (one time action)
 az feature register --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
+az feature register --namespace Microsoft.ContainerService --name AKS-AzureKeyVaultSecretsProvider
 az feature show --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
+az feature show --name AKS-AzureKeyVaultSecretsProvider --namespace Microsoft.ContainerService
 
 # Register Providers (one time action)
 az provider register --namespace Microsoft.Kubernetes
@@ -113,7 +115,7 @@ rm -rf clusters/$AKS_NAME
 rm -rf clusters/$ARC_AKS_NAME
 
 # Update the Git Repo
-git add ./clusters/ && git commit -m "IRemoving Flux Configuration" && git push
+git add ./clusters/ && git commit -m "Removing Flux Configuration" && git push
 ```
 
 Additionally to uninstall flux from a cluster the following command can be run `flux uninstall`
@@ -223,10 +225,13 @@ kubectl config use-context $AKS_NAME
 az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
 
 # Create a Cryptographic Key
-az keyvault key create --name sops-key --vault-name $VAULT_NAME --protection software --ops encrypt decrypt
+KEY_NAME="sops-key"
+az keyvault key create --name $KEY_NAME --vault-name $VAULT_NAME --protection software --ops encrypt decrypt
 
 # Create a Secret
-az keyvault secret set --vault-name $VAULT_NAME --name "admin" --value "t0p-S3cr3t"
+SECRET_NAME="admin"
+SECRET_VALUE="t0p-S3cr3t"
+az keyvault secret set --name $SECRET_NAME --value $SECRET_VALUE --vault-name $VAULT_NAME
 
 # Create a User Managed Identity
 KV_IDENTITY_NAME="kv-access-identity"
@@ -271,7 +276,7 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
     Unlike Sealed Secrets, SOPS does not require any additional controller because Flux's kustomize-controller can perform the decryption of the secrets. SOPS has integration with Azure Key Vault to store the cryptographic used to encrypt and decrypt the secrets. Access to Key Vault is performed with an Azure Identity.
 
-    [Instruction Documentation](./docs/4.MozilaSops.md)
+    [Instruction Documentation](./docs/secret_management/SopsSecrets.md)
 
         [X] AKS Cloud
         [ ] ARC Enabled AKS
@@ -282,7 +287,6 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
         1. Can a system assigned identity be used on Arc Enabled Kubernetes to access Key Vault?
 
 
-
 ![diagram](./docs/images/sops_diagram.png)
 
 
@@ -290,12 +294,23 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
 3. Azure Key Vault Provider for Secrets Store [CSI Driver](https://github.com/Azure/secrets-store-csi-driver-provider-azure)
 
-This approach allows us to define our secrets in Key Vault and automatically make them available as Kubernetes secrets.
-This option might be seen as breaking the GitOps workflow where the Git repository is the single source of truth for application desired state.
+    This approach allows us to define our secrets in Key Vault and automatically make them available as Kubernetes secrets.
+    This option might be seen as breaking the GitOps workflow where the Git repository is the single source of truth for application desired state.
 
-**!** This method is the method used for OSDU on Azure.
+    **!** This method is the method used for OSDU on Azure.
 
-[ ] Validate this method.
+    [Instruction Documentation](./docs/secret_management/CsiDriver.md)
+
+        [X] AKS Cloud
+        [ ] ARC Enabled AKS
+
+        Notes
+        ----------------
+        1. AKS implementation future method default method would be to enable Pod Identity and KV CSI Driver by native AKS functionality.
+
+
+![diagram](./docs/images/csi_driver_diagram.png)
+
 
 
 

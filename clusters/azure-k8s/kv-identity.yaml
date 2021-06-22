@@ -1,0 +1,19 @@
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: kv-access-identity
+  namespace: default
+spec:
+  clientID: 2e849e15-ef9f-4afd-838c-1fcda8d10ab6
+  resourceID: /subscriptions/2e458de2-af10-484c-a5a5-6c259d9a907f/resourcegroups/azure-k8s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/kv-access-identity
+  type: 0 # user-managed identity
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: kv-access-identity-binding
+  namespace: default
+spec:
+  azureIdentity: kv-access-identity
+  selector: kv-access-identity
