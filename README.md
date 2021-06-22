@@ -105,6 +105,19 @@ kubectl get pods -n azure-arc
 
 ## Validation - Gitops
 
+The assumption on Gitops Configurations is that the current repository is being used to manage the cluster.  If starting a new validation it tends to be best to remove the flux configuration for the cluster prior to setting up a new cluster.
+
+```bash
+# Remove the flux configurations for the clusters
+rm -rf clusters/$AKS_NAME
+rm -rf clusters/$ARC_AKS_NAME
+
+# Update the Git Repo
+git add ./clusters/ && git commit -m "IRemoving Flux Configuration" && git push
+```
+
+Additionally to uninstall flux from a cluster the following command can be run `flux uninstall`
+
 **Technical Links**
 
 [Flux](https://fluxcd.io/docs/) is a tool for keeping Kubernetes clusters in sync with sources of configuration.
@@ -198,7 +211,36 @@ TODO:// Document and validate how System Assigned Identities can be used in ARC 
 
 ## Validation - Secret Management
 
-This validation requires an Azure Key Vault to be provisioned.
+This validation requires an Azure Key Vault to be provisioned the following commands will provision a KV and a managed identity.
+
+```bash
+VAULT_NAME="azure-k8s-vault"
+RESOURCE_GROUP="azure-k8s"
+LOCATION="eastus"
+kubectl config use-context $AKS_NAME
+
+# Create Key Vault
+az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+
+# Create a Cryptographic Key
+az keyvault key create --name sops-key --vault-name $VAULT_NAME --protection software --ops encrypt decrypt
+
+# Create a Secret
+az keyvault secret set --vault-name $VAULT_NAME --name "admin" --value "t0p-S3cr3t"
+
+# Create a User Managed Identity
+KV_IDENTITY_NAME="kv-access-identity"
+az identity create --resource-group ${RESOURCE_GROUP} --name ${KV_IDENTITY_NAME}
+
+# Assign the proper Role
+KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query id -otsv)"
+KV_IDENTITY_OID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query principalId -otsv)"
+KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
+az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $KV_IDENTITY_ID
+
+# Add Access Policy for Managed Identity
+az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_IDENTITY_OID --key-permissions encrypt decrypt --secret-permissions get
+```
 
 **Technical Links**
 - [Tech Blog](https://techcommunity.microsoft.com/t5/azure-global/gitops-and-secret-management-with-aks-flux-cd-sops-and-azure-key/ba-p/2280068)

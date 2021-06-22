@@ -69,16 +69,17 @@ RESOURCE_GROUP="azure-k8s"
 AKS_NAME="azure-k8s"
 IDENTITY="test-identity"
 
-# Create POD Identity
+# Create a managed Identity
 az identity create --resource-group ${RESOURCE_GROUP} --name ${IDENTITY}
+
+# Assign a Role
 POD_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${IDENTITY} --query id -otsv)"
 POD_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${IDENTITY} --query clientId -otsv)"
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
 az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $POD_IDENTITY_ID
 
 
-# Create or Update the AzureIdentity and Binding
-# Deploy Test Pod
+# Create the AzureIdentity and Binding and deploy a test pod
 cat <<EOF | kubectl apply --namespace default -f -
 ---
 apiVersion: aadpodidentity.k8s.io/v1
@@ -131,9 +132,8 @@ spec:
     kubernetes.io/os: linux
 EOF
 
-# Validate
+# Validate  (takes about 2 minutes)
 kubectl logs identity-test
-
 ```
 
 

@@ -2,34 +2,16 @@
 
 Create a Key Vault with a User Managed Identity the access policy and the Azure Identity
 
-```bash
-VAULT_NAME="azure-k8s-vault"
-RESOURCE_GROUP="azure-k8s"
-LOCATION="eastus"
-kubectl config use-context $AKS_NAME
-
-# Create Key Vault
-az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
-
-# Create a Cryptographic Key
-az keyvault key create --name sops-key --vault-name $VAULT_NAME --protection software --ops encrypt decrypt
-
-# Create a User Managed Identity and assign Pod Identity Roles
-KV_IDENTITY_NAME="kv-access-identity"
-az identity create --resource-group ${RESOURCE_GROUP} --name ${KV_IDENTITY_NAME}
-KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query id -otsv)"
-KV_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query clientId -otsv)"
-KV_IDENTITY_OID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query principalId -otsv)"
-KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
-az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $KV_IDENTITY_ID
-
-# Add Access Policy for Managed Identity
-az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_IDENTITY_OID --key-permissions encrypt decrypt
-```
 
 Patch the kustomize-controller Pod template to match the AzureIdentity name label and allow binding.
 
 ```bash
+KV_IDENTITY_NAME="kv-access-identity"
+KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query id -otsv)"
+KV_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query clientId -otsv)"
+KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
+
+
 # Create a KV Sops Identity
 cat > ./clusters/$AKS_NAME/sops-identity.yaml <<EOF
 ---
