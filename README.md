@@ -316,7 +316,11 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
 4. Azure Key Vault to Kubernetes [(akv2k8s)](https://akv2k8s.io/)
 
-This makes Azure Key Vault secrets, certificates and keys available in Kubernetes in a simple secure way leveraging the 12 Factor App principals and includes a controller pattern as well as an injector pattern.
+    This makes Azure Key Vault secrets, certificates and keys available in Kubernetes in a simple secure way leveraging the 12 Factor App principals and includes a controller pattern as well as an injector pattern.
 
+    [Instruction Documentation]()
 
-[ ] Validate this method.
+        [ ] AKS Cloud
+        [ ] ARC Enabled AKS
+
+![diagram](./docs/images/akv2k8s_diagram.png)
