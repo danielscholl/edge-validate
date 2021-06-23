@@ -31,6 +31,8 @@ spec:
       interval: 1m
   values:
     operationMode: managed
-  valueFileSecrets:
-    # the admin secret contains the secret values
-    - name: adminsecret
+  valuesFrom:
+  - secretKeyRef
+    name: adminsecret
+    namespace: aad-pod-identity
+    key: aad-pod-identity-secrets.yaml
