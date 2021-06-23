@@ -1,6 +1,6 @@
 # Kubernetes on Edge Validation
 
-The purpose of this project is to validate certain technologies and patterns using an Azure Arc enabled Cluster. 
+The purpose of this project is to validate certain technologies and patterns using an Azure Arc enabled Cluster.
 
 Github Code Spaces is used as the environment to perform the validations and provide an easy place to learn.
 
@@ -42,7 +42,7 @@ az extension add --name customlocation
 
 ## Setup an Azure Kubernetes Instance for reference validation
 
-A public cloud AKS instance is used as a reference point to understand how things are done on AKS which is compared to an ARC enabled Cluster. 
+A public cloud AKS instance is used as a reference point to understand how things are done on AKS which is compared to an ARC enabled Cluster.
 
 [User Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-managed-identity) will be used in the creation of this AKS instance.
 
@@ -59,7 +59,7 @@ IDENTITY_NAME="aks-controlplane-identity"
 az identity create -n $IDENTITY_NAME -g $RESOURCE_GROUP -l $LOCATION
 IDENTITY_ID=$(az identity show -n $IDENTITY_NAME -g $RESOURCE_GROUP -o tsv --query "id")
 
-# Create a Cluster 
+# Create a Cluster
 AKS_NAME="azure-k8s"
 az aks create -g $RESOURCE_GROUP -n $AKS_NAME \
     --network-plugin azure \
@@ -93,6 +93,8 @@ To make things easy for the purpose of simple validations a `kind` kubernetes cl
 
 
 ```bash
+RESOURCE_GROUP="azure-k8s"
+
 # Using kind create a Kubernetes Cluster
 ARC_AKS_NAME="kind-k8s"
 kind create cluster --name $ARC_AKS_NAME

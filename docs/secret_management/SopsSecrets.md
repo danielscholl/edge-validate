@@ -1,6 +1,4 @@
-# Instructions for Setting up Key Vault
-
-Create a Key Vault with a User Managed Identity the access policy and the Azure Identity
+# Instructions for SOPS Secrets
 
 
 Patch the kustomize-controller Pod template to match the AzureIdentity name label and allow binding.
