@@ -32,6 +32,6 @@ spec:
   values:
     operationMode: managed
   valuesFrom:
-  - secretKeyRef
-    name: adminsecret
-    namespace: aad-pod-identity
+    - secretKeyRef
+      name: adminsecret
+      namespace: aad-pod-identity
