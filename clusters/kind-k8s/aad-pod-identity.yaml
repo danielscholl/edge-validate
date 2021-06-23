@@ -35,4 +35,3 @@ spec:
   - secretKeyRef
     name: adminsecret
     namespace: aad-pod-identity
-    key: aad-pod-identity-secrets.yaml
