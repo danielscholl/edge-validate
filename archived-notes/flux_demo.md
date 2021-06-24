@@ -1,3 +1,13 @@
+
+**Technical Links**
+
+[Tutorial 1](https://www.youtube.com/watch?v=N6UCKF7JD7k&t=1004s)
+[Tutorial 2](https://www.youtube.com/watch?v=btqZkVQIdd8&t=144s)
+[Tutorial 3](https://www.youtube.com/watch?v=wMSswUaN-34)
+[Tutorial 4](https://www.youtube.com/watch?v=2oC2pksBGZg)
+[Tutorial 5](https://www.youtube.com/watch?v=UhV8kYcb9Mc)
+
+
 ```bash
 # Setup Values for Github Access
 export GITHUB_TOKEN=<your-token>
