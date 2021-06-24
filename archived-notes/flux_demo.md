@@ -4,9 +4,8 @@ export GITHUB_TOKEN=<your-token>
 export GITHUB_USER=<your-username>
 export GITHUB_REPO=flux-infra
 
-# Create a Kubernetes Cluster (infra task)
+### SETUP A DEVELOPMENT CLUSTER ###
 kind create cluster --name staging
-kubectl get namespaces # Validate
 
 # Configure and install flux
 flux check --pre
@@ -18,9 +17,9 @@ flux bootstrap github \
     --personal \
     --path=clusters/staging
 
+
 # Clone down the new flux repo for the cluster
 git clone https://github.com/${GITHUB_USER}/flux-infra.git
-
 
 
 #############################################
@@ -79,12 +78,25 @@ cd flux-infra && git add -A && git commit -m "Add Real Time App" && git push && 
 
 # Validate
 flux get kustomizations
+kubectl get all -n realtime-dev
 ```
 
 
 ```bash
 # Cleanup
+kubectl config use-context kind-staging
+flux uninstall
+
+rm -rf ./flux-infra/clusters/staging
+cd flux-infra && git add -A && git commit -m "Removed staging cluster" && git push && cd ..
 kind delete clusters staging
 
 # Manually remove the repo.  http://github.com/${GITHUB_USER}/flux-infra
+```
+
+
+*Connect to Production Cluster**
+```bash
+AKS_NAME="azure-k8s"
+kubectl config use-context $AKS_NAME
 ```
