@@ -63,7 +63,6 @@ kubectl get helmrelease -A
 kubectl -n kube-system get pods
 
 # Create a Secret
-
 cat <<EOF | kubeseal \
     --controller-namespace kube-system \
     --controller-name sealed-secrets \
@@ -136,13 +135,16 @@ flux reconcile kustomization flux-system --with-source
 kubectl get helmrelease -A
 kubectl -n kube-system get pods
 
-# Create a temporary Secret
-cat > ./secret.yaml <<EOF
+# Create a Secret
+cat <<EOF | kubeseal \
+    --controller-namespace kube-system \
+    --controller-name sealed-secrets \
+    --format yaml | kubectl apply --namespace default -f -
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: app-credentials
+  name: sealed-secret
   namespace: default
 type: Opaque
 stringData:
@@ -150,15 +152,25 @@ stringData:
   password: t0p-S3cr3t
 EOF
 
-# Seal a Secret
-cat secret.yaml | kubeseal \
-    --controller-namespace kube-system \
-    --controller-name sealed-secrets \
-    --format yaml \
-    > secret-enc.yaml && rm secret.yaml
+# Validate Secret
+kubectl describe secret sealed-secret
+```
 
-    
-# Deploy and Validate Secret
-kubectl apply -f secret-enc.yaml
-kubectl describe secret -n default app-credentials
+Additionally secrets can be created from a Public PEM file saved to git
+
+```bash
+# Save the public key which can safely be stored in GIT and used to encrypt secrets without access to the Cluster.
+kubeseal --fetch-cert \
+  --controller-namespace kube-system \
+  --controller-name sealed-secrets \
+  >./clusters/$ARC_AKS_NAME/pub-cert.pem
+
+kubectl -n dev create secret generic basic-auth \
+--from-literal=user=admin \
+--from-literal=password=admin \
+--dry-run=client \
+-o json > basic-auth.json
+
+kubeseal --format=yaml --cert=./clusters/$ARC_AKS_NAME/pub-cert.pem < basic-auth.json > basic-auth.yaml
+
 ```

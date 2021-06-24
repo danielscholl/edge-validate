@@ -143,6 +143,30 @@ kubectl logs identity-test
 ARC_AKS_NAME="kind-k8s"
 kubectl config use-context "kind-$ARC_AKS_NAME"
 
+# Create a Service Principal
+IDENTITY_CLIENT_SECRET=$(az ad sp create-for-rbac -n $ARC_AKS_NAME --role contributor --query password -o tsv)
+IDENTITY_CLIENT_ID=$(az ad sp list --display-name $ARC_AKS_NAME --query [].appId -o tsv)
+TENANT_ID=$(az account show -ojson --query homeTenantId -o tsv)
+
+
+cat <<EOF | kubeseal \
+    --controller-namespace kube-system \
+    --controller-name sealed-secrets \
+    --format yaml > ./clusters/$ARC_AKS_NAME/aad-pod-identity-secrets.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: adminsecret
+  namespace: aad-pod-identity
+type: Opaque
+stringData:
+  tenantID: $TENANT_ID
+  clientID: $IDENTITY_CLIENT_ID
+  clientSecret: $IDENTITY_CLIENT_SECRET
+EOF
+
+
 cat > ./clusters/$ARC_AKS_NAME/aad-pod-identity.yaml <<EOF
 ---
 apiVersion: v1
@@ -157,7 +181,7 @@ metadata:
   namespace: aad-pod-identity
 spec:
   url: https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
-  interval: 10m
+  interval: 5m
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
@@ -177,14 +201,24 @@ spec:
       interval: 1m
   values:
     operationMode: managed
-    adminsecret:
-      tenantID:
-      clientID:
-      clientSecret:
+  valuesFrom:
+  - kind: Secret
+    name: adminsecret
+    valuesKey: tenantID
+    targetPath: adminsecret.tenantID
+  - kind: Secret
+    name: adminsecret
+    valuesKey: clientID
+    targetPath: adminsecret.clientID
+  - kind: Secret
+    name: adminsecret
+    valuesKey: clientSecret
+    targetPath: adminsecret.clientSecret
 EOF
 
+
 # Update the Git Repo
-git add ./clusters/$ARC_AKS_NAME/aad-pod-identity.yaml && git commit -m "Installing AAD Pod Identity" && git push
+git add ./clusters/$ARC_AKS_NAME && git commit -m "Installing AAD Pod Identity" && git push
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
