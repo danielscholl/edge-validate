@@ -167,10 +167,27 @@ git add -f ./clusters/$ARC_AKS_NAME/.sops.* && git commit -am "Share GPG public 
 # Delete the key from machine
 gpg --delete-secret-keys "${KEY_FP}"
 
-
 # Import the Key for encrypting
 gpg --import ./clusters/$ARC_AKS_NAME/.sops.pub.asc
 
+# Create a temporary Secret
+cat > ./secret.yaml <<EOF
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sops-secret-credentials
+  namespace: default
+type: Opaque
+stringData:
+  username: admin
+  password: t0p-S3cr3t
+EOF
 
+# Encrypt a Secret
+sops --encrypt --config ./clusters/$ARC_AKS_NAME/.sops.yaml secret.yaml > ./sops-secret-enc.yaml && rm secret.yaml
+kubectl apply -f ./sops-secret-enc.yaml --validate=false && rm sops-secret-enc.yaml
 
+# Deploy and Validate Secret
+kubectl describe secret sops-secret-credentials
 ```

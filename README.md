@@ -265,7 +265,7 @@ Unlike Sealed Secrets, SOPS does not require any additional controller because F
 
 
     [X] AKS Cloud
-    [ ] ARC Enabled AKS
+    [X] ARC Enabled AKS
 
     Notes
     ----------------
