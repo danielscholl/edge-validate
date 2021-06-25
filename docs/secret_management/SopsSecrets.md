@@ -119,3 +119,58 @@ kubectl apply -f ./sops-secret-enc.yaml --validate=false && rm sops-secret-enc.y
 
 # Deploy and Validate Secret
 kubectl describe secret sops-secret-credentials
+```
+
+
+**Install Sealed Secrets on the ARC Enabled Kubernetes Instance**
+```bash
+ARC_AKS_NAME="kind-k8s"
+kubectl config use-context "kind-$ARC_AKS_NAME"
+
+# Generate a GPG/OpenPGP key with no passphrase
+KEY_NAME="edge.microsoft.com"
+KEY_COMMENT="flux secrets"
+
+gpg --batch --full-generate-key <<EOF
+%no-protection
+Key-Type: 1
+Key-Length: 4096
+Subkey-Type: 1
+Subkey-Length: 4096
+Expire-Date: 0
+Name-Comment: ${KEY_COMMENT}
+Name-Real: ${KEY_NAME}
+EOF
+
+# Retrieve the GPG key fingerprint
+KEY_FP=$(gpg --list-secret-keys "${KEY_NAME}" | head -2 | tail -1 | sed 's/^ *//g')
+
+# Create a Kubernetes secret named sops-gpg in the flux-system namespace
+# This key might want to be backed up in some secure place in case it gets deleted.
+gpg --export-secret-keys --armor "${KEY_FP}" | \
+kubectl create secret generic sops-gpg \
+  --namespace=flux-system \
+  --from-file=sops.asc=/dev/stdin
+
+# Save the Public Key to Git and a SOPS Config file
+gpg --export --armor "${KEY_FP}" > ./clusters/$ARC_AKS_NAME/.sops.pub.asc
+
+cat <<EOF > ./clusters/$ARC_AKS_NAME/.sops.yaml
+creation_rules:
+  - path_regex: .*.yaml
+    encrypted_regex: ^(data|stringData)$
+    pgp: ${KEY_FP}
+EOF
+
+git add -f ./clusters/$ARC_AKS_NAME/.sops.* && git commit -am "Share GPG public key for secrets generation" && git push
+
+# Delete the key from machine
+gpg --delete-secret-keys "${KEY_FP}"
+
+
+# Import the Key for encrypting
+gpg --import ./clusters/$ARC_AKS_NAME/.sops.pub.asc
+
+
+
+```
