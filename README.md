@@ -305,14 +305,14 @@ This option might be seen as breaking the GitOps workflow where the Git reposito
 **!** This method is the method used for OSDU on Azure.
 
 
-
     [X] AKS Cloud
-    [ ] ARC Enabled AKS
+    [X] ARC Enabled AKS
 
     Notes
     ----------------
     1. AKS implementation future method default method would be to enable Pod Identity and KV CSI Driver by native AKS functionality.
     2. Azure CSI Driver 0.0.20 doesn't work with mapped secrets.  Using 0.0.19
+    3. ARC implementation uses a Service Principal and not Pod Identity.
 
 
 ![diagram](./docs/images/csi_driver_diagram.png)
