@@ -1,0 +1,45 @@
+---
+# This is a SecretProviderClass example using a service principal to access Keyvault
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-keyvault
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"         # [OPTIONAL] if not provided, will default to "false"
+    keyvaultName: "azure-k8s-vault"     # the name of the KeyVault
+    cloudName: ""                   # [OPTIONAL for Azure] if not provided, azure environment will default to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: admin
+          objectType: secret        # object types: secret, key or cert
+          objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+    tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47"
+---
+# This is a sample pod definition for using SecretProviderClass and service-principal to access Keyvault
+kind: Pod
+apiVersion: v1
+metadata:
+  name: busybox-secrets-store-inline
+spec:
+  containers:
+  - name: busybox
+    image: k8s.gcr.io/e2e-test-images/busybox:1.29
+    command:
+      - "/bin/sleep"
+      - "10000"
+    volumeMounts:
+    - name: secrets-store-inline
+      mountPath: "/mnt/secrets-store"
+      readOnly: true
+  volumes:
+    - name: secrets-store-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "azure-keyvault"
+        nodePublishSecretRef:                       # Only required when using service principal mode
+          name: secrets-store-creds                 # Only required
