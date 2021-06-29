@@ -17,6 +17,12 @@ spec:
           objectType: secret        # object types: secret, key or cert
           objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
     tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47"
+  secretObjects:
+  - secretName: key-vault-secrets
+    type: Opaque
+    data:
+    - objectName: admin
+      key: admin-password
 ---
 # This is a sample pod definition for using SecretProviderClass and service-principal to access Keyvault
 kind: Pod
