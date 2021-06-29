@@ -17,50 +17,30 @@ Install the CSI Driver for Azure Key Vault in the clusters.
 AKS_NAME="azure-k8s"
 kubectl config use-context $AKS_NAME
 
-#########
-cat > ./clusters/$AKS_NAME/csi-driver.yaml <<EOF
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: csi-driver
----
-apiVersion: source.toolkit.fluxcd.io/v1beta1
-kind: HelmRepository
-metadata:
-  name: csi-secrets-store-provider-azure
-  namespace: csi-driver
-spec:
-  interval: 5m0s
-  url: https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts
----
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
-kind: HelmRelease
-metadata:
-  name: csi-secrets-store-provider-azure
-  namespace: csi-driver
-spec:
-  chart:
-    spec:
-      chart: csi-secrets-store-provider-azure
-      sourceRef:
-        kind: HelmRepository
-        name: csi-secrets-store-provider-azure
-      version: 0.0.19
-  install: {}
-  interval: 5m0s
-  targetNamespace: csi-driver
-EOF
+# Create the Flux Source
+flux create source helm kv-csi-driver \
+--interval=5m \
+--url=https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts \
+--export > ./clusters/$AKS_NAME/kv-csi-driver-source.yaml
+
+# Create the Flux Helm Release (0.0.19 works for Secret Object Mapping)
+flux create helmrelease kv-csi-driver \
+--interval=5m \
+--release-name=kv-csi-driver \
+--target-namespace=kube-system \
+--interval=5m \
+--source=HelmRepository/kv-csi-driver \
+--chart=csi-secrets-store-provider-azure \
+--chart-version="0.0.19" \
+--export > ./clusters/$AKS_NAME/kv-csi-driver-helm.yaml
 
 # Update the Git Repo
-git add ./clusters/$AKS_NAME/csi-driver.yaml && git commit -m "Installing KV CSI Driver" && git push
-flux reconcile kustomization flux-system --with-source
+git add ./clusters/$AKS_NAME/kv-csi-driver-*.yaml && git commit -m "Installing KV CSI Driver" && git push
 
 # Validate the Deployment
+flux reconcile kustomization flux-system --with-source
 kubectl get helmrelease -A
-flux get sources helm -A
-flux get helmreleases -A
-kubectl -n csi-driver get pods
+kubectl get pods -n kube-system |grep kv-csi-driver
 ```
 
 Create a pod identity to access the Key Vault Secrets
@@ -70,7 +50,6 @@ KV_IDENTITY_NAME="kv-access-identity"
 KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query id -otsv)"
 KV_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query clientId -otsv)"
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
-
 
 # Create the Pod Identity and Binding
 cat <<EOF | kubectl apply --namespace default -f -
@@ -94,7 +73,6 @@ spec:
   azureIdentity: kv-access-identity
   selector: kv-access-identity
 EOF
-
 
 # Validate the Deployment
 kubectl get AzureIdentity -A
@@ -213,20 +191,19 @@ kubectl get pods -n kube-system |grep kv-csi-driver
 
 Deploy a Sample
 
-> Requires Sealed Secrets
+> Requires Sealed Secrets and KV_PRINCIPAL created
 
 ```bash
-
 # Create a Sealed Secret using the key
 kubectl create secret generic kv-creds \
   --from-literal clientid=$KV_PRINCIPAL_ID \
   --from-literal clientsecret=$KV_PRINCIPAL_SECRET \
   --dry-run=client -o yaml| kubeseal \
     --cert=./clusters/$ARC_AKS_NAME/pub-cert.pem \
-    --format yaml > ./clusters/$ARC_AKS_NAME/kv-csi-driver-secret.yaml
+    --format yaml | kubectl apply --namespace default -f -
 
 # Deploy SecretProviderClass and Test POD
-cat > ./clusters/$ARC_AKS_NAME/kv-csi-driver-test.yaml <<EOF
+cat <<EOF | kubectl apply --namespace default -f -
 ---
 apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
 kind: SecretProviderClass
@@ -286,90 +263,8 @@ spec:
               key: admin-password
 EOF
 
-# Update the Git Repo
-git add ./clusters/$ARC_AKS_NAME/kv-csi-driver-*.yaml && git commit -m "Deploying KV CSI Test App" && git push
-
 # Validate
-flux reconcile kustomization flux-system --with-source
 kubectl exec vault-test -- ls /mnt/azure-keyvault
-kubectl exec vault-test -- cat /mnt/azure-keyvault/admin
-kubectl exec vault-test -- env |grep ADMIN_PASSWORD
-```
-
-
-
-
-
-
-
-Add a Secret Provider Class
-
-```bash
-TENANT_ID=$(az account show --query tenantId -otsv)
-VAULT_NAME="azure-k8s-vault"
-KV_IDENTITY_NAME="kv-access-identity"
-
-# Deploy Secret Provider Class
-cat <<EOF | kubectl apply --namespace default -f -
----
-apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
-kind: SecretProviderClass
-metadata:
-  name: azure-keyvault
-spec:
-  provider: azure
-  parameters:
-    usePodIdentity: "false"
-    keyvaultName: "$VAULT_NAME"
-    tenantId: "$TENANT_ID"
-    objects:  |
-      array:
-        - |
-          objectName: admin
-          objectType: secret
-  secretObjects:
-  - secretName: key-vault-secrets
-    type: Opaque
-    data:
-    - objectName: admin
-      key: admin-password
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: vault-test
-spec:
-  volumes:
-    - name: azure-keyvault
-      csi:
-        driver: secrets-store.csi.k8s.io
-        readOnly: true
-        volumeAttributes:
-          secretProviderClass: azure-keyvault
-        nodePublishSecretRef:                       # Only required when using service principal mode
-          name: secrets-store-creds                 # Only required
-  containers:
-    - image: gcr.io/kuar-demo/kuard-amd64:1
-      name: kuard
-      ports:
-        - containerPort: 8080
-          name: http
-          protocol: TCP
-      volumeMounts:
-        - name: azure-keyvault
-          mountPath: "/mnt/azure-keyvault"
-          readOnly: true
-      env:
-        - name: ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: key-vault-secrets
-              key: admin-password
-EOF
-
-
-# Validate
-kubectl exec vault-test -- ls /mnt/azure-keyvault/
 kubectl exec vault-test -- cat /mnt/azure-keyvault/admin
 kubectl exec vault-test -- env |grep ADMIN_PASSWORD
 ```
