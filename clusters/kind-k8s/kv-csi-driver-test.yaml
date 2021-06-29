@@ -40,6 +40,12 @@ spec:
     - name: secrets-store-inline
       mountPath: "/mnt/secrets-store"
       readOnly: true
+    env:
+      - name: ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: key-vault-secrets
+            key: admin-password
   volumes:
     - name: secrets-store-inline
       csi:
