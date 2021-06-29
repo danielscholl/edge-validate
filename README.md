@@ -9,7 +9,6 @@ Github Code Spaces is used as the environment to perform the validations and pro
 
 Configure a subscription with the features and providers necessary with cli extensions loaded.
 
-
 ```bash
 # Azure CLI Login
 az login
@@ -44,7 +43,9 @@ az extension add --name customlocation
 
 A public cloud AKS instance is used as a reference point to understand how things are done on AKS which is compared to an ARC enabled Cluster.
 
-[User Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-managed-identity) will be used in the creation of this AKS instance.
+**Technical Links**
+
+[User Managed Identities](https://docs.microsoft.com/en-us/azure/aks/use-managed-identity)
 
 
 ```bash
@@ -87,9 +88,11 @@ az role assignment create --role "Virtual Machine Contributor" --assignee "$KUBE
 
 To make things easy for the purpose of simple validations a `kind` kubernetes cluster is used.
 
-[Github Code Spaces](https://docs.github.com/en/codespaces) is an online development environment hosted by Github and powered by Visual Studio Code.
+**Technical Links**
 
-[Kubernetes-sigs/kind](https://github.com/kubernetes-sigs/kind) is a tool for running local Kubernetes clusters using Docker container "nodes".
+[Github Code Spaces](https://docs.github.com/en/codespaces)
+
+[Kubernetes-sigs/kind](https://github.com/kubernetes-sigs/kind)
 
 [KinD like AKS](https://www.danielstechblog.io/local-kubernetes-setup-with-kind/)
 
@@ -130,9 +133,9 @@ Additionally to uninstall flux from a cluster the following command can be run `
 
 **Technical Links**
 
-[Flux](https://fluxcd.io/docs/) is a tool for keeping Kubernetes clusters in sync with sources of configuration.
+[Flux](https://fluxcd.io/docs/)
 
-[GitOps Configurations](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/conceptual-configurations) is a microsoft managed method for enabling GitOps practices on an ARC enabled Cluster using Flux.
+[GitOps Configurations](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/conceptual-configurations)
 
 
 
