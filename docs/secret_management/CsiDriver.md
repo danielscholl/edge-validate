@@ -185,12 +185,13 @@ kubectl exec vault-test -- env |grep ADMIN_PASSWORD
 ARC_AKS_NAME="kind-k8s"
 kubectl config use-context kind-$ARC_AKS_NAME
 
-# Deploy KV CSI Driver
+# Create the Flux Source
 flux create source helm kv-csi-driver \
 --interval=5m \
 --url=https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts \
 --export > ./clusters/$ARC_AKS_NAME/kv-csi-driver-source.yaml
 
+# Create the Flux Helm Release (0.0.19 works for Secret Object Mapping)
 flux create helmrelease kv-csi-driver \
 --interval=5m \
 --release-name=kv-csi-driver \
