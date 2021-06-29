@@ -1,16 +1,24 @@
 # Instructions for SOPS Secrets
 
+> This activity requires Key Vault.
+
+**Install Mozilla SOP on the Azure Kubernetes Instance**
 
 Patch the kustomize-controller Pod template to match the AzureIdentity name label and allow binding.
 
 ```bash
+RESOURCE_GROUP="azure-k8s"
+AKS_NAME="azure-k8s"
+kubectl config use-context $AKS_NAME
+
+# Retrieve KV Identity Information
 KV_IDENTITY_NAME="kv-access-identity"
 KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query id -otsv)"
 KV_IDENTITY_CLIENT_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query clientId -otsv)"
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
 
 # Create a KV Sops Identity
-cat <<EOF | kubectl apply --namespace default -f -
+cat > ./clusters/$AKS_NAME/sops-identity.yaml <<EOF
 ---
 apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentity
@@ -65,14 +73,14 @@ patchesStrategicMerge:
 EOF
 
 # Update the Git Repo to deploy
-git add ./clusters/$AKS_NAME/flux-system && git commit -m "SOPS Configuration" && git push
+git add ./clusters/$AKS_NAME && git commit -m "SOPS Configuration" && git push
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
 kubectl describe Kustomization flux-system -n flux-system
 ```
 
-Create a local .sops.yaml
+Create a .sops.yaml
 
 ```bash
 VAULT_NAME="azure-k8s-vault"
@@ -80,12 +88,14 @@ VAULT_NAME="azure-k8s-vault"
 # Retrieve the Key ID
 KEY_URL=$(az keyvault key show --name sops-key --vault-name $VAULT_NAME --query key.kid -otsv)
 
-cat > .sops.yaml <<EOF
+cat <<EOF > ./clusters/$AKS_NAME/.sops.yaml
 creation_rules:
   - path_regex: .*.yaml
     encrypted_regex: ^(data|stringData)$
     azure_keyvault: $KEY_URL
 EOF
+
+git add -f ./clusters/$AKS_NAME/.sops.* && git commit -am "Save sops file for secrets generation" && git push
 ```
 
 Create a secret

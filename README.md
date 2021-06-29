@@ -85,7 +85,7 @@ az role assignment create --role "Virtual Machine Contributor" --assignee "$KUBE
 
 ## Setup an ARC Enabled Kubernetes Instance for validation
 
-To make things easy for the purpose of simple validations a `kind` kubernetes cluster is used this kind server is setup as simliar to an AKS scenario as possible.
+To make things easy for the purpose of simple validations a `kind` kubernetes cluster is used.
 
 [Github Code Spaces](https://docs.github.com/en/codespaces) is an online development environment hosted by Github and powered by Visual Studio Code.
 
@@ -103,7 +103,7 @@ az group create -n $RESOURCE_GROUP -l $LOCATION
 
 # Using kind create a Kubernetes Cluster
 ARC_AKS_NAME="kind-k8s"
-kind/create.sh $ARC_AKS_NAME
+kind create cluster --name $ARC_AKS_NAME
 
 # Arc enable the Kubernetes Cluster
 az connectedk8s connect -n $ARC_AKS_NAME -g $RESOURCE_GROUP
@@ -221,7 +221,7 @@ LOCATION="eastus"
 # Create Key Vault
 az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
 
-# Create a Cryptographic Key
+# Create a Cryptographic Key for SOPS
 KEY_NAME="sops-key"
 az keyvault key create --name $KEY_NAME --vault-name $VAULT_NAME --protection software --ops encrypt decrypt
 
@@ -233,7 +233,6 @@ az keyvault secret set --name $SECRET_NAME --value $SECRET_VALUE --vault-name $V
 # For AKS Validation Create a User Managed Identity and assign Role
 KV_IDENTITY_NAME="kv-access-identity"
 az identity create --resource-group ${RESOURCE_GROUP} --name ${KV_IDENTITY_NAME}
-
 KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query id -otsv)"
 KV_IDENTITY_OID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query principalId -otsv)"
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
@@ -251,7 +250,6 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 
 # For ARC Validation Add Access Policy for Service Principal
 az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_PRINCIPAL_OID --key-permissions encrypt decrypt --secret-permissions get --certificate-permissions get
-
 ```
 
 **Technical Links**

@@ -34,31 +34,30 @@ flux create helmrelease sealed-secrets \
   --crds=CreateReplace \
   --export > ./clusters/$AKS_NAME/sealed-secrets-helm.yaml
 
-
 # Update the Git Repo
 git add ./clusters/$AKS_NAME/sealed-secrets-*.yaml && git commit -m "Installing Sealed Secrets" && git push
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
 kubectl get helmrelease -A
-kubectl -n kube-system get pods
+kubectl -n kube-system get pods |grep sealed-secrets
 
-# Create a Secret
-cat <<EOF | kubeseal \
-    --controller-namespace kube-system \
-    --controller-name sealed-secrets \
+# Retrieve the Public Key
+kubeseal --fetch-cert \
+  --controller-namespace kube-system \
+  --controller-name sealed-secrets \
+  >./clusters/$AKS_NAME/pub-cert.pem
+
+# Update the Git Repo
+git add ./clusters/$AKS_NAME/pub-cert.pem && git commit -m "Adding Public Key" && git push
+
+# Create a Sealed Secret using the key
+kubectl create secret generic sealed-secret \
+  --from-literal username="admin" \
+  --from-literal password="t0p-S3cr3t" \
+  --dry-run=client -o yaml| kubeseal \
+    --cert=./clusters/$AKS_NAME/pub-cert.pem \
     --format yaml | kubectl apply --namespace default -f -
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sealed-secret
-  namespace: default
-type: Opaque
-stringData:
-  username: admin
-  password: t0p-S3cr3t
-EOF
 
 # Validate & Delete Secret
 kubectl describe secret sealed-secret && kubectl delete secret sealed-secret
@@ -91,7 +90,6 @@ git add ./clusters/$ARC_AKS_NAME/sealed-secrets-* && git commit -m "Installing S
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
-kubectl get helmrepository -A
 kubectl get helmrelease -A
 kubectl -n kube-system get pods |grep sealed-secrets
 
@@ -104,22 +102,14 @@ kubeseal --fetch-cert \
 # Update the Git Repo
 git add ./clusters/$ARC_AKS_NAME/pub-cert.pem && git commit -m "Adding Public Key" && git push
 
-# Create a Secret using the key
-cat <<EOF | kubeseal \
+# Create a Sealed Secret using the key
+kubectl create secret generic sealed-secret \
+  --from-literal username="admin" \
+  --from-literal password="t0p-S3cr3t" \
+  --dry-run=client -o yaml| kubeseal \
     --cert=./clusters/$ARC_AKS_NAME/pub-cert.pem \
     --format yaml | kubectl apply --namespace default -f -
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sealed-secret
-  namespace: default
-type: Opaque
-stringData:
-  username: admin
-  password: t0p-S3cr3t
-EOF
 
 # Validate Secret
-kubectl describe secret sealed-secret
+kubectl describe secret sealed-secret && kubectl delete secret sealed-secret
 ```

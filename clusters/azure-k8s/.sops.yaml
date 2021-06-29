@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: .*.yaml
+    encrypted_regex: ^(data|stringData)$
+    azure_keyvault: https://azure-k8s-vault.vault.azure.net/keys/sops-key/998d25c0669d42569bcbc4f8fd918789
