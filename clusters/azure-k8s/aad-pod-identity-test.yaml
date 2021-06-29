@@ -1,0 +1,49 @@
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: test-identity
+  namespace: default
+spec:
+  type: 0
+  resourceID: /subscriptions/2e458de2-af10-484c-a5a5-6c259d9a907f/resourcegroups/azure-k8s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/test-identity
+  clientID: 6026fe82-7387-4894-acd3-e4f440c82d32
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: test-identity-binding
+  namespace: default
+spec:
+  azureIdentity: test-identity
+  selector: test-identity
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: identity-test
+  labels:
+    aadpodidbinding: test-identity
+spec:
+  containers:
+  - name: identity-test
+    image: mcr.microsoft.com/oss/azure/aad-pod-identity/demo:v1.6.3
+    args:
+      - --subscriptionid=2e458de2-af10-484c-a5a5-6c259d9a907f
+      - --clientid=6026fe82-7387-4894-acd3-e4f440c82d32
+      - --resourcegroup=azure-k8s
+    env:
+      - name: MY_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      - name: MY_POD_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+  nodeSelector:
+    kubernetes.io/os: linux
