@@ -31,21 +31,21 @@ metadata:
   name: demo-kv
 spec:
   containers:
-  - name: busybox
-    image: k8s.gcr.io/e2e-test-images/busybox:1.29
-    command:
-      - "/bin/sleep"
-      - "10000"
-    volumeMounts:
-    - name: secrets-store-inline
-      mountPath: "/mnt/secrets-store"
-      readOnly: true
-    env:
-      - name: ADMIN_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: key-vault-secrets
-            key: admin-password
+    - name: busybox
+      image: k8s.gcr.io/e2e-test-images/busybox:1.29
+      command:
+        - "/bin/sleep"
+        - "10000"
+      volumeMounts:
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      env:
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: key-vault-secrets
+              key: admin-password
   volumes:
     - name: secrets-store-inline
       csi:
