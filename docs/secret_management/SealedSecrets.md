@@ -16,46 +16,27 @@ Install Bitnami Sealed Secrets in the clusters.
 AKS_NAME="azure-k8s"
 kubectl config use-context $AKS_NAME
 
-cat > ./clusters/$AKS_NAME/sealed-secrets.yaml <<EOF
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: sealed-secrets
----
-apiVersion: source.toolkit.fluxcd.io/v1beta1
-kind: HelmRepository
-metadata:
-  name: sealed-secrets
-  namespace: sealed-secrets
-spec:
-  interval: 10m0s
-  url: https://bitnami-labs.github.io/sealed-secrets
----
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
-kind: HelmRelease
-metadata:
-  name: sealed-secrets
-  namespace: sealed-secrets
-spec:
-  chart:
-    spec:
-      chart: sealed-secrets
-      sourceRef:
-        kind: HelmRepository
-        name: sealed-secrets
-      version: '>=1.16.0-0'
-  install:
-    crds: Create
-  interval: 10m0s
-  releaseName: sealed-secrets
-  targetNamespace: kube-system
-  upgrade:
-    crds: CreateReplace
-EOF
+# Create the Flux Source
+flux create source helm sealed-secrets \
+  --interval=5m \
+  --url=https://bitnami-labs.github.io/sealed-secrets \
+  --export > ./clusters/$AKS_NAME/sealed-secrets-source.yaml
+
+# Create the Flux Helm Release (0.0.19 works for Secret Object Mapping)
+flux create helmrelease sealed-secrets \
+  --interval=5m \
+  --release-name=sealed-secrets \
+  --target-namespace=kube-system \
+  --interval=10m \
+  --source=HelmRepository/sealed-secrets \
+  --chart=sealed-secrets \
+  --chart-version=">=1.16.0-0" \
+  --crds=CreateReplace \
+  --export > ./clusters/$AKS_NAME/sealed-secrets-helm.yaml
+
 
 # Update the Git Repo
-git add ./clusters/$AKS_NAME/sealed-secrets.yaml && git commit -m "Installing Sealed Secrets" && git push
+git add ./clusters/$AKS_NAME/sealed-secrets-*.yaml && git commit -m "Installing Sealed Secrets" && git push
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
@@ -79,8 +60,8 @@ stringData:
   password: t0p-S3cr3t
 EOF
 
-# Validate Secret
-kubectl describe secret sealed-secret
+# Validate & Delete Secret
+kubectl describe secret sealed-secret && kubectl delete secret sealed-secret
 ```
 
 
@@ -90,20 +71,20 @@ ARC_AKS_NAME="kind-k8s"
 kubectl config use-context "kind-$ARC_AKS_NAME"
 
 flux create source helm sealed-secrets \
---interval=10m \
---url=https://bitnami-labs.github.io/sealed-secrets \
---export > ./clusters/$ARC_AKS_NAME/sealed-secrets-source.yaml
+  --interval=5m \
+  --url=https://bitnami-labs.github.io/sealed-secrets \
+  --export > ./clusters/$ARC_AKS_NAME/sealed-secrets-source.yaml
 
 flux create helmrelease sealed-secrets \
---interval=10m \
---release-name=sealed-secrets \
---target-namespace=kube-system \
---interval=10m \
---source=HelmRepository/sealed-secrets \
---chart=sealed-secrets \
---chart-version=">=1.16.0-0" \
---crds=CreateReplace \
---export > ./clusters/$ARC_AKS_NAME/sealed-secrets-helm.yaml
+  --interval=5m \
+  --release-name=sealed-secrets \
+  --target-namespace=kube-system \
+  --interval=10m \
+  --source=HelmRepository/sealed-secrets \
+  --chart=sealed-secrets \
+  --chart-version=">=1.16.0-0" \
+  --crds=CreateReplace \
+  --export > ./clusters/$ARC_AKS_NAME/sealed-secrets-helm.yaml
 
 # Update the Git Repo
 git add ./clusters/$ARC_AKS_NAME/sealed-secrets-* && git commit -m "Installing Sealed Secrets" && git push

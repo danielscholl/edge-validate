@@ -21,47 +21,32 @@ AKS_NAME="azure-k8s"
 kubectl config use-context $AKS_NAME
 
 # Install AAD Pod Identity (kubenet roles should already be configured)
-cat > ./clusters/$AKS_NAME/aad-pod-identity.yaml <<EOF
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: aad-pod-identity
----
-apiVersion: source.toolkit.fluxcd.io/v1beta1
-kind: HelmRepository
-metadata:
-  name: aad-pod-identity
-  namespace: aad-pod-identity
-spec:
-  url: https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
-  interval: 5m
----
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
-kind: HelmRelease
-metadata:
-  name: aad-pod-identity
-  namespace: aad-pod-identity
-spec:
-  interval: 5m
-  chart:
-    spec:
-      chart: aad-pod-identity
-      version: 4.1.1
-      sourceRef:
-        kind: HelmRepository
-        name: aad-pod-identity
-        namespace: aad-pod-identity
-      interval: 1m
-EOF
+# Create the Flux Source
+flux create source helm aad-pod-identity \
+  --interval=5m \
+  --url=https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts \
+  --export > ./clusters/$AKS_NAME/aad-pod-identity-source.yaml
+
+# Create the Flux Helm Release (0.0.19 works for Secret Object Mapping)
+flux create helmrelease aad-pod-identity \
+  --interval=5m \
+  --release-name=aad-pod-identity \
+  --target-namespace=kube-system \
+  --interval=5m \
+  --source=HelmRepository/aad-pod-identity \
+  --chart=aad-pod-identity \
+  --chart-version="4.1.1" \
+  --export > ./clusters/$AKS_NAME/aad-pod-identity-helm.yaml
 
 # Update the Git Repo
-git add ./clusters/$AKS_NAME/aad-pod-identity.yaml && git commit -m "Installing AAD Pod Identity" && git push
+git add ./clusters/$AKS_NAME/aad-pod-identity-*.yaml && git commit -m "Installing AAD Pod Identity" && git push
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
+kubectl get helmrepository -A
 kubectl get helmrelease -A
-kubectl -n aad-pod-identity get pods
+helm list -A
+kubectl -n kube-system get pods |grep aad-pod-identity
 ```
 
 Create the Identity and Binding
@@ -82,7 +67,8 @@ az role assignment create --role "Managed Identity Operator" --assignee "$KUBENE
 
 
 # Create the AzureIdentity and Binding and deploy a test pod
-cat <<EOF | kubectl apply --namespace default -f -
+#cat <<EOF | kubectl apply --namespace default -f -
+cat > ./clusters/$AKS_NAME/aad-pod-identity-test.yaml <<EOF
 ---
 apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentity
@@ -134,7 +120,11 @@ spec:
     kubernetes.io/os: linux
 EOF
 
+# Update the Git Repo
+git add ./clusters/$AKS_NAME/aad-pod-identity-*.yaml && git commit -m "Installing AAD Pod Identity Test" && git push
+
 # Validate  (takes about 2 minutes)
+flux reconcile kustomization flux-system --with-source
 kubectl logs identity-test
 ```
 
@@ -178,16 +168,15 @@ git add ./clusters/$ARC_AKS_NAME/aad-pod-identity-*.yaml && git commit -m "Insta
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
-kubectl get helmrelease -A
+kubectl get helmrepository -A
 kubectl get pods -n kube-system |grep aad-pod-identity-nmi
 ```
 
 Deploy a Sample
 
-> Requires Sealed Secrets
+> Requires Sealed Secrets to be setup first.
 
 ```bash
-
 # Create a Sealed Secret using the key
 kubectl create secret generic aad-pod-identity-creds \
   --from-literal clientsecret=$CLIENT_SECRET --dry-run=client -o yaml| kubeseal \

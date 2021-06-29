@@ -21,6 +21,7 @@ ARC_AKS_NAME="kind-k8s"
 kubectl config use-context "kind-$ARC_AKS_NAME"
 
 # Deploy Sample App
+BASE_DIR=$(realpath ~)
 az k8s-configuration create \
   --name sample-app \
   --cluster-name $ARC_AKS_NAME --resource-group $RESOURCE_GROUP \
@@ -30,10 +31,10 @@ az k8s-configuration create \
   --repository-url "git@github.com:danielscholl/edge-validate.git" \
   --scope namespace --cluster-type connectedClusters \
   --operator-params="--git-path=release/sample-app --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@edge.microsoft.com" \
-  --ssh-private-key-file "/home/vscode/.ssh/id_rsa"
+  --ssh-private-key-file "$BASE_DIR/.ssh/id_rsa" -ojson
 
 # Validate the Deployment
-az k8s-configuration show --name sample-app --resource-group $RESOURCE_GROUP --cluster-name $ARC_AKS_NAME --cluster-type connectedClusters --query complianceStatus
+az k8s-configuration show --name sample-app --resource-group $RESOURCE_GROUP --cluster-name $ARC_AKS_NAME --cluster-type connectedClusters --query complianceStatus -ojson
 kubectl get pods -n sample-app -w
 
 # Deploy Ingress (LoadBalancer Ingress not supported by Kind Clusters)
@@ -46,10 +47,10 @@ az k8s-configuration create \
   --repository-url "git@github.com:danielscholl/edge-validate.git" \
   --scope cluster --cluster-type connectedClusters \
   --operator-params="--git-path=release/sample-app-ingress --git-poll-interval 3s --git-branch=main --git-user=flux --git-email=flux@edge.microsoft.com" \
-  --ssh-private-key-file "/home/vscode/.ssh/id_rsa"
+  --ssh-private-key-file "$BASE_DIR/.ssh/id_rsa" -ojson
 
 # Validate the Deployment
-az k8s-configuration show --name sample-app-ingress --resource-group $RESOURCE_GROUP --cluster-name $ARC_AKS_NAME --cluster-type connectedClusters --query complianceStatus
+az k8s-configuration show --name sample-app-ingress --resource-group $RESOURCE_GROUP --cluster-name $ARC_AKS_NAME --cluster-type connectedClusters --query complianceStatus -ojson
 kubectl get svc -n sample-app-ingress -w
 ```
 
