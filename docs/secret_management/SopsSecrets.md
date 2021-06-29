@@ -124,7 +124,7 @@ stringData:
 EOF
 
 # Encrypt a Secret
-sops --encrypt secret.yaml > ./sops-secret-enc.yaml && rm secret.yaml
+sops --encrypt --config ./clusters/$AKS_NAME/.sops.yaml secret.yaml > ./sops-secret-enc.yaml && rm secret.yaml
 kubectl apply -f ./sops-secret-enc.yaml --validate=false && rm sops-secret-enc.yaml
 
 # Deploy and Validate Secret
