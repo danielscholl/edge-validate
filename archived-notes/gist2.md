@@ -1,4 +1,4 @@
-# Validation: KV CSI Secret Driver with Service Principal
+# Validation: AAD Pod Identity with Service Principal
 
 This validation  will use Service Principal and Key Vault CSI Secret Driver features to test secret management with Key Vault Secrets.
 
@@ -19,11 +19,6 @@ CLIENT_SECRET=$(az ad sp create-for-rbac -n $CLIENT_NAME --skip-assignment --que
 CLIENT_ID=$(az ad sp list --display-name $CLIENT_NAME --query [].appId -o tsv)
 TENANT_ID=$(az ad sp list --display-name $CLIENT_NAME --query [].appOwnerTenantId -o tsv)
 SUBSCRIPTION_ID=$(az account show --query id -otsv)
-
-# Assign a Role for Demo Pod Test Case
-RESOURCE_GROUP_ID=$(az group show -n $RESOURCE_GROUP --query id -otsv)
-az role assignment create --role "Managed Identity Operator" --assignee $CLIENT_ID --scope $RESOURCE_GROUP_ID
-az role assignment create --role "Virtual Machine Contributor" --assignee $CLIENT_ID --scope $RESOURCE_GROUP_ID
 ```
 
 

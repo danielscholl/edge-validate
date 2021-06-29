@@ -110,10 +110,9 @@ git add ./clusters/$ARC_AKS_NAME/sealed-secrets-* && git commit -m "Installing S
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
-helm list -A
-kubectl get helmrelease -A
 kubectl get helmrepository -A
-kubectl -n kube-system get pods
+kubectl get helmrelease -A
+kubectl -n kube-system get pods |grep sealed-secrets
 
 # Retrieve the Public Key
 kubeseal --fetch-cert \

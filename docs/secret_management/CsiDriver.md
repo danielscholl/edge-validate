@@ -176,3 +176,199 @@ kubectl exec vault-test -- ls /mnt/azure-keyvault/
 kubectl exec vault-test -- cat /mnt/azure-keyvault/admin
 kubectl exec vault-test -- env |grep ADMIN_PASSWORD
 ```
+
+
+**ARC Enabled Instance**
+
+
+```bash
+ARC_AKS_NAME="kind-k8s"
+kubectl config use-context kind-$ARC_AKS_NAME
+
+# Deploy KV CSI Driver
+flux create source helm kv-csi-driver \
+--interval=5m \
+--url=https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts \
+--export > ./clusters/$ARC_AKS_NAME/kv-csi-driver-source.yaml
+
+flux create helmrelease kv-csi-driver \
+--interval=5m \
+--release-name=kv-csi-driver \
+--target-namespace=kube-system \
+--interval=5m \
+--source=HelmRepository/kv-csi-driver \
+--chart=csi-secrets-store-provider-azure \
+--chart-version="0.0.19" \
+--export > ./clusters/$ARC_AKS_NAME/kv-csi-driver-helm.yaml
+
+# Update the Git Repo
+git add ./clusters/$ARC_AKS_NAME/kv-csi-driver-*.yaml && git commit -m "Installing KV CSI Driver" && git push
+
+# Validate the Deployment
+flux reconcile kustomization flux-system --with-source
+kubectl get helmrelease -A
+kubectl get pods -n kube-system |grep kv-csi-driver
+```
+
+Deploy a Sample
+
+> Requires Sealed Secrets
+
+```bash
+
+# Create a Sealed Secret using the key
+kubectl create secret generic kv-creds \
+  --from-literal clientid=$KV_PRINCIPAL_ID \
+  --from-literal clientsecret=$KV_PRINCIPAL_SECRET \
+  --dry-run=client -o yaml| kubeseal \
+    --cert=./clusters/$ARC_AKS_NAME/pub-cert.pem \
+    --format yaml > ./clusters/$ARC_AKS_NAME/kv-csi-driver-secret.yaml
+
+# Deploy SecretProviderClass and Test POD
+cat > ./clusters/$ARC_AKS_NAME/kv-csi-driver-test.yaml <<EOF
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-keyvault
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"         # [OPTIONAL] if not provided, will default to "false"
+    keyvaultName: "$VAULT_NAME"     # the name of the KeyVault
+    cloudName: ""                   # [OPTIONAL for Azure] if not provided, azure environment will default to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: admin
+          objectType: secret        # object types: secret, key or cert
+          objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+    tenantId: "$TENANT_ID"
+  secretObjects:
+  - secretName: key-vault-secrets
+    type: Opaque
+    data:
+    - objectName: admin
+      key: admin-password
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vault-test
+  namespace: default
+spec:
+  volumes:
+    - name: azure-keyvault
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: azure-keyvault
+        nodePublishSecretRef:
+          name: kv-creds
+  containers:
+    - image: gcr.io/kuar-demo/kuard-amd64:1
+      name: kuard
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      volumeMounts:
+        - name: azure-keyvault
+          mountPath: "/mnt/azure-keyvault"
+          readOnly: true
+      env:
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: key-vault-secrets
+              key: admin-password
+EOF
+
+# Update the Git Repo
+git add ./clusters/$ARC_AKS_NAME/kv-csi-driver-*.yaml && git commit -m "Deploying KV CSI Test App" && git push
+
+# Validate
+flux reconcile kustomization flux-system --with-source
+kubectl exec vault-test -- ls /mnt/azure-keyvault
+kubectl exec vault-test -- cat /mnt/azure-keyvault/admin
+kubectl exec vault-test -- env |grep ADMIN_PASSWORD
+```
+
+
+
+
+
+
+
+Add a Secret Provider Class
+
+```bash
+TENANT_ID=$(az account show --query tenantId -otsv)
+VAULT_NAME="azure-k8s-vault"
+KV_IDENTITY_NAME="kv-access-identity"
+
+# Deploy Secret Provider Class
+cat <<EOF | kubectl apply --namespace default -f -
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-keyvault
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    keyvaultName: "$VAULT_NAME"
+    tenantId: "$TENANT_ID"
+    objects:  |
+      array:
+        - |
+          objectName: admin
+          objectType: secret
+  secretObjects:
+  - secretName: key-vault-secrets
+    type: Opaque
+    data:
+    - objectName: admin
+      key: admin-password
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vault-test
+spec:
+  volumes:
+    - name: azure-keyvault
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: azure-keyvault
+        nodePublishSecretRef:                       # Only required when using service principal mode
+          name: secrets-store-creds                 # Only required
+  containers:
+    - image: gcr.io/kuar-demo/kuard-amd64:1
+      name: kuard
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      volumeMounts:
+        - name: azure-keyvault
+          mountPath: "/mnt/azure-keyvault"
+          readOnly: true
+      env:
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: key-vault-secrets
+              key: admin-password
+EOF
+
+
+# Validate
+kubectl exec vault-test -- ls /mnt/azure-keyvault/
+kubectl exec vault-test -- cat /mnt/azure-keyvault/admin
+kubectl exec vault-test -- env |grep ADMIN_PASSWORD
+```

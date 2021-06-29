@@ -85,19 +85,25 @@ az role assignment create --role "Virtual Machine Contributor" --assignee "$KUBE
 
 ## Setup an ARC Enabled Kubernetes Instance for validation
 
-To make things easy for the purpose of simple validations a `kind` kubernetes cluster is used and hosted in Github Code Spaces.
+To make things easy for the purpose of simple validations a `kind` kubernetes cluster is used this kind server is setup as simliar to an AKS scenario as possible.
 
 [Github Code Spaces](https://docs.github.com/en/codespaces) is an online development environment hosted by Github and powered by Visual Studio Code.
 
 [Kubernetes-sigs/kind](https://github.com/kubernetes-sigs/kind) is a tool for running local Kubernetes clusters using Docker container "nodes".
 
+[KinD like AKS](https://www.danielstechblog.io/local-kubernetes-setup-with-kind/)
+
 
 ```bash
 RESOURCE_GROUP="azure-k8s"
+LOCATION="eastus"
+
+# Create a Resource Group
+az group create -n $RESOURCE_GROUP -l $LOCATION
 
 # Using kind create a Kubernetes Cluster
 ARC_AKS_NAME="kind-k8s"
-kind create cluster --name $ARC_AKS_NAME
+kind/create.sh $ARC_AKS_NAME
 
 # Arc enable the Kubernetes Cluster
 az connectedk8s connect -n $ARC_AKS_NAME -g $RESOURCE_GROUP
@@ -169,11 +175,10 @@ Additionally to uninstall flux from a cluster the following command can be run `
 **Option 1 -- AAD Pod Identity using MIC** -- [Configuration Instructions](./docs/identity_management/PodIdentity.md)
 
     [X] AKS Cloud
-    [ ] ARC Enabled AKS
 
     Notes
     ----------------
-    1. This is the common way of configuration for AKS.
+    1. This is the most common way for configuration in AKS.
 
 
 ![diagram](./docs/images/aad_pod_identity.png)
@@ -185,18 +190,23 @@ Additionally to uninstall flux from a cluster the following command can be run `
 
     Notes
     ----------------
-    1. This is the coming new way of configuration for AKS with extenions.
+    1. This is the newly developed way of configuration for AKS using extensions.
+
+![diagram](./docs/images/pod_identities.png)
 
 
-**Option 3 -- System Assigned Identity** -- [Configuration Instructions]()
+**Option 3 -- System Assigned Identity** -- [Configuration Instructions](./docs/identity_management/PodIdentity.md)
 
-    [ ] ARC Enabled AKS
+    [x] ARC Enabled AKS
 
     Questions Raised
     ----------------
-    1. ARC Clusters can only leverage a System Assigned Identity.  Is the meta API still available to be called and how?
+    1. ARC Clusters use AAD Pod Identity running in Managed Operator mode (no MIC) and the AzureIdentity Object itself holds the SP credentials.
+    2. Requires the CLIENT_SECRET to be provided using a **Sealed** or **SOPS** Secret.
+    3. Requires periodic Key Rolling of the Secret.
 
-![diagram](./docs/images/identity_diagram.png)
+![diagram](./docs/images/identity_diagram_sp.png)
+
 
 
 ## Validation - Secret Management
@@ -207,7 +217,6 @@ This validation requires an Azure Key Vault to be provisioned the following comm
 VAULT_NAME="azure-k8s-vault"
 RESOURCE_GROUP="azure-k8s"
 LOCATION="eastus"
-kubectl config use-context $AKS_NAME
 
 # Create Key Vault
 az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
@@ -221,18 +230,28 @@ SECRET_NAME="admin"
 SECRET_VALUE="t0p-S3cr3t"
 az keyvault secret set --name $SECRET_NAME --value $SECRET_VALUE --vault-name $VAULT_NAME
 
-# Create a User Managed Identity
+# For AKS Validation Create a User Managed Identity and assign Role
 KV_IDENTITY_NAME="kv-access-identity"
 az identity create --resource-group ${RESOURCE_GROUP} --name ${KV_IDENTITY_NAME}
 
-# Assign the proper Role
 KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query id -otsv)"
 KV_IDENTITY_OID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query principalId -otsv)"
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
 az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $KV_IDENTITY_ID
 
-# Add Access Policy for Managed Identity
+# For ARC Validation Create a Service Principal
+KV_PRINCIPAL_NAME="kv-access-principal"
+KV_PRINCIPAL_SECRET=$(az ad sp create-for-rbac -n $KV_PRINCIPAL_NAME --skip-assignment --query password -o tsv)
+KV_PRINCIPAL_ID=$(az ad sp list --display-name $KV_PRINCIPAL_NAME --query [].appId -o tsv)
+KV_PRINCIPAL_OID=$(az ad sp list --display-name $KV_PRINCIPAL_NAME --query [].objectId -o tsv)
+TENANT_ID=$(az account show --query tenantId -otsv)
+
+# For AKS Validation Add Access Policy for User Managed Identity
 az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_IDENTITY_OID --key-permissions encrypt decrypt get --secret-permissions get --certificate-permissions get
+
+# For ARC Validation Add Access Policy for Service Principal
+az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_PRINCIPAL_OID --key-permissions encrypt decrypt --secret-permissions get --certificate-permissions get
+
 ```
 
 **Technical Links**

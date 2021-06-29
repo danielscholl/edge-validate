@@ -7,6 +7,8 @@ Install AAD Pod Identity in the clusters.
 [AAD Pod Identity with Kubenet](https://azure.github.io/aad-pod-identity/docs/configure/aad_pod_identity_on_kubenet/)
 [AAD Pod Identity Managed Mode](https://azure.github.io/aad-pod-identity/docs/configure/pod_identity_in_managed_mode/)
 [Blog](https://opensourcelibs.com/lib/aad-pod-identity)
+[Issue 380](https://github.com/Azure/aad-pod-identity/issues/380)
+[Best Practices](https://docs.microsoft.com/en-us/azure/aks/operator-best-practices-identity)
 
 
 **Install AAD Pod Identity on the Azure Kubernetes Instance**
@@ -144,9 +146,145 @@ ARC_AKS_NAME="kind-k8s"
 kubectl config use-context "kind-$ARC_AKS_NAME"
 
 # Create a Service Principal
-IDENTITY_CLIENT_SECRET=$(az ad sp create-for-rbac -n $ARC_AKS_NAME --role contributor --query password -o tsv)
-IDENTITY_CLIENT_ID=$(az ad sp list --display-name $ARC_AKS_NAME --query [].appId -o tsv)
-TENANT_ID=$(az account show -ojson --query homeTenantId -o tsv)
+CLIENT_SECRET=$(az ad sp create-for-rbac -n $ARC_AKS_NAME --skip-assignment --query password -o tsv)
+CLIENT_ID=$(az ad sp list --display-name $ARC_AKS_NAME --query [].appId -o tsv)
+TENANT_ID=$(az ad sp list --display-name $ARC_AKS_NAME --query [].appOwnerTenantId -o tsv)
+SUBSCRIPTION_ID=$(az account show --query id -otsv)
+
+# Deploy AAD Pod Identity
+flux create source helm aad-pod-identity \
+--interval=5m \
+--url=https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts \
+--export > ./clusters/$ARC_AKS_NAME/aad-pod-identity-source.yaml
+
+cat > values.yaml <<EOF
+operationMode: managed
+EOF
+
+flux create helmrelease aad-pod-identity \
+--interval=5m \
+--release-name=aad-pod-identity \
+--target-namespace=kube-system \
+--interval=5m \
+--source=HelmRepository/aad-pod-identity \
+--chart=aad-pod-identity \
+--chart-version=">=4.1.0-0" \
+--crds=CreateReplace \
+--values=values.yaml \
+--export > ./clusters/$ARC_AKS_NAME/aad-pod-identity-helm.yaml && rm values.yaml
+
+# Update the Git Repo
+git add ./clusters/$ARC_AKS_NAME/aad-pod-identity-*.yaml && git commit -m "Installing AAD Pod Identity" && git push
+
+# Validate the Deployment
+flux reconcile kustomization flux-system --with-source
+kubectl get helmrelease -A
+kubectl get pods -n kube-system |grep aad-pod-identity-nmi
+```
+
+Deploy a Sample
+
+> Requires Sealed Secrets
+
+```bash
+
+# Create a Sealed Secret using the key
+kubectl create secret generic aad-pod-identity-creds \
+  --from-literal clientsecret=$CLIENT_SECRET --dry-run=client -o yaml| kubeseal \
+    --cert=./clusters/$ARC_AKS_NAME/pub-cert.pem \
+    --format yaml > ./clusters/$ARC_AKS_NAME/aad-pod-identity-secret.yaml
+
+# Deploy Azure Identity
+cat > ./clusters/$ARC_AKS_NAME/aad-pod-identity-test.yaml <<EOF
+---
+apiVersion: "aadpodidentity.k8s.io/v1"
+kind: AzureIdentity
+metadata:
+  name: identity-test
+spec:
+  type: 1
+  tenantID: $TENANT_ID
+  clientID: $CLIENT_ID
+  clientPassword: {"name":"aad-pod-identity-creds","namespace":"default"}
+---
+apiVersion: "aadpodidentity.k8s.io/v1"
+kind: AzureIdentityBinding
+metadata:
+  name: identity-test-binding
+spec:
+  azureIdentity: "identity-test"
+  selector: "identity-test"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+  labels:
+    aadpodidbinding: identity-test
+spec:
+  containers:
+  - name: identity-test
+    image: mcr.microsoft.com/oss/azure/aad-pod-identity/demo:v1.6.3
+    args:
+      - --subscriptionid=${SUBSCRIPTION_ID}
+      - --clientid=${CLIENT_ID}
+      - --resourcegroup=${RESOURCE_GROUP}
+    env:
+      - name: MY_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      - name: MY_POD_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+  nodeSelector:
+    kubernetes.io/os: linux
+EOF
+
+# Update the Git Repo
+git add ./clusters/$ARC_AKS_NAME/aad-pod-identity-*.yaml && git commit -m "Installing AAD Pod Identity" && git push
+
+# Validate
+kubectl logs demo
+
+## The following curl command retrieves a token from within a pod
+curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```bash
 
 
 cat <<EOF | kubeseal \
