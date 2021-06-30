@@ -1,4 +1,4 @@
-# Instructions for Testing Managed Pod Identity
+# Instructions for Setting Up Managed Pod Identity
 
 **Technical Links**
 
