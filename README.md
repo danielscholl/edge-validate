@@ -239,6 +239,7 @@ az identity create --resource-group ${RESOURCE_GROUP} --name ${KV_IDENTITY_NAME}
 KV_IDENTITY_ID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query id -otsv)"
 KV_IDENTITY_OID="$(az identity show -g ${RESOURCE_GROUP} -n ${KV_IDENTITY_NAME} --query principalId -otsv)"
 KUBENET_ID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.clientId -otsv)"
+KUBENET_OID="$(az aks show -g ${RESOURCE_GROUP} -n ${AKS_NAME} --query identityProfile.kubeletidentity.objectId -otsv)"
 az role assignment create --role "Managed Identity Operator" --assignee "$KUBENET_ID" --scope $KV_IDENTITY_ID
 
 # For ARC Validation Create a Service Principal
@@ -250,6 +251,9 @@ TENANT_ID=$(az account show --query tenantId -otsv)
 
 # For AKS Validation Add Access Policy for User Managed Identity
 az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_IDENTITY_OID --key-permissions encrypt decrypt get --secret-permissions get --certificate-permissions get
+
+# For AKS Validation with akv2k8s allow access to KV with the Kubenet Identity
+az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KUBENET_OID --secret-permissions get
 
 # For ARC Validation Add Access Policy for Service Principal
 az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $KV_PRINCIPAL_OID --key-permissions encrypt decrypt --secret-permissions get --certificate-permissions get
@@ -325,7 +329,12 @@ This option might be seen as breaking the GitOps workflow where the Git reposito
 
 This makes Azure Key Vault secrets, certificates and keys available in Kubernetes in a simple secure way leveraging the 12 Factor App principals and includes a controller pattern as well as an injector pattern.
 
-    [ ] AKS Cloud
-    [ ] ARC Enabled AKS
+    [X] AKS Cloud
+    [X] ARC Enabled AKS
+
+     Notes
+    ----------------
+    1. This method provides a more seemless approach to KV Secret Mappings and removes the need for volume mounts.
+    2. When using an ARC scenario a sealed secret values.yaml has to be used to install the helm chart which requires then the SP settings.
 
 ![diagram](./docs/images/akv2k8s_diagram.png)

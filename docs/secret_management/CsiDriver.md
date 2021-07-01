@@ -1,7 +1,7 @@
 # Instructions for Azure Key Vault CSI Driver
 
 Install the CSI Driver for Azure Key Vault in the clusters.
-> This process will perform a checkin on the git repository /clusters/`$AKS_NAME`/flux-system
+
 
 **Technical Links**
 
@@ -157,7 +157,6 @@ kubectl exec vault-test -- env |grep ADMIN_PASSWORD
 
 
 **ARC Enabled Instance**
-
 
 ```bash
 ARC_AKS_NAME="kind-k8s"
