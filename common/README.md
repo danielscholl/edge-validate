@@ -14,22 +14,23 @@ kind create cluster --config=kind/single-node.yaml --name=$CLUSTER
 flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$CLUSTER
 
 # Clone the Repo
-git clone https://github.com/$GITHUB_USER/$GITHUB_REPO.git flux-configuration
+git clone git@github.com:$GITHUB_USER/$GITHUB_REPO.git flux-infra
+
 
 # Create a Flux Git Source
 flux create source git edge-validate \
   --url https://github.com/danielscholl/edge-validate \
   --interval 1m \
   --branch main \
-  --export
+  --export > flux-infra/clusters/$CLUSTER/edge-validate-source.yaml
 
 # Create the Flux Kustomization for infra deployment
 flux create kustomization edge-infra \
---source=edge-validate \
---path=./deploy \
---prune=true \
---interval=5m \
---export
+  --source=edge-validate \
+  --path=./deploy/manifests \
+  --prune=true \
+  --interval=5m \
+  --export > flux-infra/clusters/$CLUSTER/edge-validate-kustomization.yaml
 
 # Create the Flux Release
 flux create helmrelease akv2k8s \
