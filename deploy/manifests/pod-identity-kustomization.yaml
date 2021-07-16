@@ -12,12 +12,8 @@ spec:
   path: ./deploy/aad-pod-identity
   prune: true
   validation: client
-  # healthChecks:
-  #   - apiVersion: apps/v1
-  #     kind: Deployment
-  #     name: keda-operator
-  #     namespace: keda
-  #   - apiVersion: apps/v1
-  #     kind: Deployment
-  #     name: keda-operator-metrics-apiserver
-  #     namespace: keda
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: daemonset
+      name: aad-pod-identity-nmi
+      namespace: aad-pod-identity
