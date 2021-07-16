@@ -45,6 +45,24 @@ cd flux-infra && \
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
+```
 
 
+
+**Cleanup** *(optional)*
+
+```bash
+# Remove the KinD Cluster
+kind delete cluster --name $CLUSTER
+
+# Remove the Cluster Configuration
+rm -rf flux-infra/clusters/$CLUSTER
+
+# Update the Git Repo
+BASE_DIR=$(pwd)
+cd flux-infra && \
+  git add -f clusters/$CLUSTER && \
+  git commit -am "Removing Cluster" && \
+  git push && \
+  cd $BASE_DIR
 ```
