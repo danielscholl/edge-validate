@@ -15,5 +15,9 @@ spec:
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
-      name: keda
+      name: keda-operator
+      namespace: keda
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: keda-operator-metrics-apiserver
       namespace: keda
