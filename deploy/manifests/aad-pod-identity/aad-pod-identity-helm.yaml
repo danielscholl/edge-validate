@@ -16,7 +16,7 @@ spec:
     crds: Create
   interval: 5m0s
   releaseName: aad-pod-identity
-  targetNamespace: kube-system
+  targetNamespace: aad-pod-identity
   upgrade:
     crds: CreateReplace
   values:
