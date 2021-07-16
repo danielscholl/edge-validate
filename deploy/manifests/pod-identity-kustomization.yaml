@@ -13,7 +13,6 @@ spec:
   prune: true
   validation: client
   healthChecks:
-    - apiVersion: apps/v1
-      kind: DaemonSet
-      name: aad-pod-identity-nmi
-      namespace: aad-pod-identity
+  - kind: DaemonSet
+  name: aad-pod-identity-nmi
+  namespace: aad-pod-identity
