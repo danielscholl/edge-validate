@@ -51,9 +51,6 @@ kubectl scale deployment --replicas 1 coredns --namespace kube-system
 # Validate the Node is Ready
 kubectl get nodes
 
-# Install the Ingress Controller
-istioctl install -f deploy/istio.yaml
-
 # Bootstrap Flux Components
 flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$CLUSTER
 
