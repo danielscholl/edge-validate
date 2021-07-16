@@ -49,7 +49,7 @@ curl https://docs.projectcalico.org/manifests/calico.yaml | kubectl apply -f -
 kubectl scale deployment --replicas 1 coredns --namespace kube-system
 
 # Validate the Node is Ready
-kubectl get nodes
+kubectl get nodes -w
 
 # Bootstrap Flux Components
 flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$CLUSTER

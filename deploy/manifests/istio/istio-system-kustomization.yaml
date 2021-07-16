@@ -19,11 +19,11 @@ spec:
       kind: Deployment
       name: istiod
       namespace: istio-system
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: prometheus
-      namespace: istio-system
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: flagger
-      namespace: istio-system
+    # - apiVersion: apps/v1
+    #   kind: Deployment
+    #   name: prometheus
+    #   namespace: istio-system
+    # - apiVersion: apps/v1
+    #   kind: Deployment
+    #   name: flagger
+    #   namespace: istio-system
