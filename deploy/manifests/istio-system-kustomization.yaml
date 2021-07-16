@@ -10,7 +10,7 @@ spec:
   interval: 10m0s
   sourceRef:
     kind: GitRepository
-    name: istio-install
+    name: edge-source
   path: ./deploy/istio/system
   prune: true
   validation: client
