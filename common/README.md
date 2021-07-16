@@ -32,17 +32,16 @@ flux create kustomization edge-infra \
   --interval=5m \
   --export > flux-infra/clusters/$CLUSTER/edge-validate-kustomization.yaml
 
-# Create the Flux Release
-flux create helmrelease akv2k8s \
-  --interval=5m \
-  --release-name=akv2k8s \
-  --target-namespace=kube-system \
-  --interval=5m \
-  --source=HelmRepository/spv-charts \
-  --chart=akv2k8s \
-  --chart-version=">=2.0.0-0" \
-  --crds=CreateReplace \
-  --values-from=secret/akv2k8s-values.yaml \
-  --export > $REPO_SOURCE/clusters/$ARC_AKS_NAME/akv2k8s-helm.yaml
+# Update the Git Repo
+BASE_DIR=$(pwd)
+cd flux-infra && \
+  git add -f clusters/$CLUSTER/edge-validate-*.yaml && \
+  git commit -am "Configuring Edge-Validate Deployments" && \
+  git push && \
+  cd $BASE_DIR
+
+# Validate the Deployment
+flux reconcile kustomization flux-system --with-source
+
 
 ```
