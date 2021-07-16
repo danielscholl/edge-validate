@@ -10,6 +10,9 @@ GITHUB_USER="<your-github-organization>"
 CLUSTER="dev"
 kind create cluster --config=kind/single-node.yaml --name=$CLUSTER
 
+# Scale down CoreDNS
+kubectl scale deployment --replicas 1 coredns --namespace kube-system
+
 # Bootstrap Flux Components
 flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$CLUSTER
 
