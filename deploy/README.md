@@ -6,12 +6,53 @@ GITHUB_TOKEN="<your-github-token>"
 GITHUB_REPO="<your-github-project>"
 GITHUB_USER="<your-github-organization>"
 
-# Setup a Cluster similar to AKS
 CLUSTER="dev"
-kind create cluster --config=kind/single-node.yaml --name=$CLUSTER
 
-# Scale down CoreDNS
+# Setup a Cluster similar to AKS with Calico as Network Plugin
+# Ingress is on Port 30000 and Port 30001
+cat <<EOF | kind create cluster --name=$CLUSTER --config=-
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+networking:
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 6443
+  podSubnet: "10.240.0.0/16"
+  serviceSubnet: "10.0.0.0/16"
+  disableDefaultCNI: true
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+  extraPortMappings:
+  - containerPort: 30000
+    hostPort: 80
+    listenAddress: "127.0.0.1"
+    protocol: TCP
+  - containerPort: 30001
+    hostPort: 443
+    listenAddress: "127.0.0.1"
+    protocol: TCP
+  - containerPort: 30002
+    hostPort: 15021
+    listenAddress: "127.0.0.1"
+    protocol: TCP
+EOF
+
+# Install Calico Networking
+curl https://docs.projectcalico.org/manifests/calico.yaml | kubectl apply -f -
+
+# Scale down CoreDNS to save resources
 kubectl scale deployment --replicas 1 coredns --namespace kube-system
+
+# Validate the Node is Ready
+kubectl get nodes
+
+# Install the Ingress Controller
+istioctl install -f deploy/istio.yaml
 
 # Bootstrap Flux Components
 flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$CLUSTER
