@@ -14,5 +14,5 @@ spec:
   validation: client
   healthChecks:
   - kind: DaemonSet
-  name: aad-pod-identity-nmi
-  namespace: aad-pod-identity
+    name: aad-pod-identity-nmi
+    namespace: aad-pod-identity
