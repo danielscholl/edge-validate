@@ -69,7 +69,7 @@ flux create source git edge-validate \
   --url https://github.com/danielscholl/edge-validate \
   --interval 1m \
   --branch main \
-  --export > flux-infra/clusters/$CLUSTER/edge-validate-source.yaml
+  --export > flux-infra/clusters/$CLUSTER/edge-infra-source.yaml
 
 # Create the Edge Validate Kustomization
 flux create kustomization edge-infra \
@@ -77,13 +77,13 @@ flux create kustomization edge-infra \
   --path=./deploy/manifests \
   --prune=true \
   --interval=5m \
-  --export > flux-infra/clusters/$CLUSTER/edge-validate-kustomization.yaml
+  --export > flux-infra/clusters/$CLUSTER/edge-infra-kustomization.yaml
 
 # Update the Git Repo
 BASE_DIR=$(pwd)
 cd flux-infra && \
-  git add -f clusters/$CLUSTER/edge-validate-*.yaml && \
-  git commit -am "Configuring Edge-Validate Deployments" && \
+  git add -f clusters/$CLUSTER/edge-infra-*.yaml && \
+  git commit -am "Configuring Edge-Infra Deployments" && \
   git push && \
   cd $BASE_DIR
 
@@ -175,7 +175,7 @@ EOF
 ##########################################
 ### Create Sample Application Override ###
 ##########################################
-mkdir -p flux-infra/apps/$CLUSTER/sample-app
+mkdir -p flux-infra/apps/$CLUSTER
 
 # Environment Sealed Secret
 kubectl create secret generic $PRINCIPAL_NAME-creds \
@@ -183,10 +183,28 @@ kubectl create secret generic $PRINCIPAL_NAME-creds \
   --from-literal clientsecret=$PRINCIPAL_SECRET --dry-run=client -o yaml| kubeseal \
     --controller-namespace kube-system \
     --controller-name sealed-secrets \
-    --format yaml > flux-infra/apps/$CLUSTER/sample-app/sealed-secret.yaml
+    --format yaml > flux-infra/apps/$CLUSTER/sample-app-sealed-secret.yaml
+
+# Environment Variables
+cat > values.yaml <<EOF
+azure:
+  tenant_id: $TENANT_ID
+  subscription_id: $SUBSCRIPTION_ID
+  principal_id: $PRINCIPAL_ID
+  resourcegroup_name: $RESOURCE_GROUP
+  keyvault_name: $VAULT_NAME
+EOF
+
+flux create helmrelease sample-app \
+    --interval=5m \
+    --source=GitRepository/edge-validate \
+    --chart=./charts/sample-app \
+    --namespace=sample-app \
+    --values=values.yaml \
+    --export > flux-infra/apps/$CLUSTER/sample-app-values.yaml && rm values.yaml
 
 # Environment Kustomization
-cat > flux-infra/apps/$CLUSTER/sample-app/kustomization.yaml <<EOF
+cat > flux-infra/apps/$CLUSTER/kustomization.yaml <<EOF
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -194,9 +212,18 @@ namespace: sample-app
 resources:
   - ../base/sample-app
 patchesStrategicMerge:
+  - sample-app-sealed-secret.yaml
   - sample-app-values.yaml
-  - sealed-secret.yaml
 EOF
+
+# Update the Git Repo
+BASE_DIR=$(pwd)
+cd flux-infra && \
+  git add -f apps/$CLUSTER && \
+  git commit -am "Sample App Deployment" && \
+  git push && \
+  cd $BASE_DIR
+
 
 
 #############################################
@@ -212,9 +239,8 @@ flux create kustomization edge-apps \
 # Update the Git Repo
 BASE_DIR=$(pwd)
 cd flux-infra && \
-  git add -f clusters/$CLUSTER && \
-  git add -f apps && \
-  git commit -am "Sample App Deployment" && \
+  git add -f clusters/$CLUSTER/apps-kustomization.yaml && \
+  git commit -am "Hookup Apps Kustomization" && \
   git push && \
   cd $BASE_DIR
 
@@ -240,4 +266,5 @@ cd flux-infra && \
   git commit -am "Removing Cluster" && \
   git push && \
   cd $BASE_DIR
+rm -rf flux-infra
 ```
