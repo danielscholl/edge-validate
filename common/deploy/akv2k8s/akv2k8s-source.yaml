@@ -1,9 +1,0 @@
----
-apiVersion: source.toolkit.fluxcd.io/v1beta1
-kind: HelmRepository
-metadata:
-  name: akv2k8s-repo
-  namespace: flux-system
-spec:
-  interval: 1m0s
-  url: http://charts.spvapi.no/

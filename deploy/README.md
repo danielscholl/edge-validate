@@ -94,6 +94,50 @@ kubectl get pods -n istio-system
 kubectl get pods -n istio-operator
 ```
 
+## Deploy a Sample Application
+
+Create required Azure Resources
+
+```bash
+RESOURCE_GROUP="validate-sample"
+LOCATION="eastus"
+RAND="$(echo $RANDOM | tr '[0-9]' '[a-z]')"
+VAULT_NAME="kv-$RAND"
+PRINCIPAL_NAME="principal-$RAND"
+TENANT_ID=$(az account show --query tenantId -otsv)
+SUBSCRIPTION_ID=$(az account show --query id -otsv)
+
+# Create a Resource Group
+az group create -n $RESOURCE_GROUP -l $LOCATION
+
+# Create Key Vault
+az keyvault create --name $VAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+
+# Create a Secret
+SECRET_NAME="admin"
+SECRET_VALUE="t0p-S3cr3t"
+az keyvault secret set --name $SECRET_NAME --value $SECRET_VALUE --vault-name $VAULT_NAME
+
+# Create a Service Principal for validation
+PRINCIPAL_SECRET=$(az ad sp create-for-rbac -n $PRINCIPAL_NAME --skip-assignment --query password -o tsv)
+PRINCIPAL_ID=$(az ad sp list --display-name $PRINCIPAL_NAME --query [].appId -o tsv)
+PRINCIPAL_OID=$(az ad sp list --display-name $PRINCIPAL_NAME --query [].objectId -o tsv)
+
+# Provide Access to the Service Principal
+az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $PRINCIPAL_OID --key-permissions encrypt decrypt --secret-permissions get --certificate-permissions get
+```
+
+Deploy Application to Kubernetes
+
+```bash
+# Create a Sealed Secret using the key
+kubectl create secret generic $PRINCIPAL_NAME-creds \
+  --from-literal clientsecret=$PRINCIPAL_SECRET --dry-run=client -o yaml| kubeseal \
+    --controller-namespace sealed-secrets \
+    --controller-name sealed-secrets \
+    --format yaml
+
+```
 
 ## Cleanup *(optional)*
 
