@@ -11,9 +11,9 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: kv-csi-driver
-      version: 0.0.19
+      version: 0.0.20
   install: {}
   interval: 5m0s
   releaseName: kv-csi-driver
-  targetNamespace: kube-system
+  targetNamespace: kv-csi-driver
 

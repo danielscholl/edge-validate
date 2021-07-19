@@ -1,15 +1,12 @@
 # Install Instructions
 
 ```bash
-# Export Github Information as necessary
-GITHUB_TOKEN="<your-github-token>"
-GITHUB_REPO="<your-github-project>"
-GITHUB_USER="<your-github-organization>"
-
+######################
+### CREATE CLUSTER ###
+######################
 CLUSTER="dev"
 
-# Setup a Cluster similar to AKS with Calico as Network Plugin
-# Ingress is on Port 30000 and Port 30001
+# Setup a Cluster likeAKS with Calico as Network Plugin with IngressPort = 30000,300001
 cat <<EOF | kind create cluster --name=$CLUSTER --config=-
 apiVersion: kind.x-k8s.io/v1alpha4
 kind: Cluster
@@ -51,21 +48,28 @@ kubectl scale deployment --replicas 1 coredns --namespace kube-system
 # Validate the Node is Ready
 kubectl get nodes -w
 
+
+#########################
+### CONFIGURE CLUSTER ###
+#########################
+GITHUB_TOKEN="<your-github-token>"
+GITHUB_REPO="<your-github-project>"
+GITHUB_USER="<your-github-organization>"
+
 # Bootstrap Flux Components
 flux bootstrap github --owner=$GITHUB_USER --repository=$GITHUB_REPO --branch=main --path=./clusters/$CLUSTER
 
 # Clone the Repo
 git clone git@github.com:$GITHUB_USER/$GITHUB_REPO.git flux-infra
 
-
-# Create a Flux Git Source
+# Create the Edge Validate Git Source
 flux create source git edge-validate \
   --url https://github.com/danielscholl/edge-validate \
   --interval 1m \
   --branch main \
   --export > flux-infra/clusters/$CLUSTER/edge-validate-source.yaml
 
-# Create the Flux Kustomization for infra deployment
+# Create the Edge Validate Kustomization
 flux create kustomization edge-infra \
   --source=edge-validate \
   --path=./deploy/manifests \
