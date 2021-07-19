@@ -12,9 +12,16 @@ spec:
   path: ./deploy/cert-manager
   prune: true
   validation: client
-  # healthChecks:
-  #   - apiVersion: apps/v1
-  #     kind: Deployment
-  #     name: keda-operator
-  #     namespace: keda
-
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: certmgr-cert-manager
+      namespace: cert-manager
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: certmgr-cert-manager-cainjector
+      namespace: cert-manager
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: certmgr-cert-manager
+      namespace: certmgr-cert-manager-webhook

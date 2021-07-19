@@ -1,9 +1,8 @@
 # Install Instructions
 
+## Create a Cluster
+
 ```bash
-######################
-### CREATE CLUSTER ###
-######################
 CLUSTER="dev"
 
 # Setup a Cluster likeAKS with Calico as Network Plugin with IngressPort = 30000,300001
@@ -47,8 +46,11 @@ kubectl scale deployment --replicas 1 coredns --namespace kube-system
 
 # Validate the Node is Ready
 kubectl get nodes -w
+```
 
+## Configure the Cluster
 
+```bash
 #########################
 ### CONFIGURE CLUSTER ###
 #########################
@@ -87,11 +89,13 @@ cd flux-infra && \
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
+kubectl get HelmRelease -A
+kubectl get pods -n istio-system
+kubectl get pods -n istio-operator
 ```
 
 
-
-**Cleanup** *(optional)*
+## Cleanup *(optional)*
 
 ```bash
 # Remove the KinD Cluster
