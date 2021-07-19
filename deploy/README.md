@@ -133,9 +133,106 @@ Deploy Application to Kubernetes
 # Create a Sealed Secret using the key
 kubectl create secret generic $PRINCIPAL_NAME-creds \
   --from-literal clientsecret=$PRINCIPAL_SECRET --dry-run=client -o yaml| kubeseal \
-    --controller-namespace sealed-secrets \
+    --controller-namespace kube-system \
     --controller-name sealed-secrets \
-    --format yaml
+    --format yaml > flux-infra/clusters/$CLUSTER/principal-credentials.yaml
+
+# Deploy Secret Provider Class
+cat > flux-infra/clusters/$CLUSTER/secret-provider.yaml <<EOF
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-keyvault
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    keyvaultName: "$VAULT_NAME"
+    cloudName: ""
+    objects:  |
+      array:
+        - |
+          objectName: admin
+          objectType: secret
+          objectVersion: ""
+    tenantId: "$TENANT_ID"
+  secretObjects:
+  - secretName: key-vault-secrets
+    type: Opaque
+    data:
+    - objectName: admin
+      key: admin-password
+EOF
+
+
+# Deploy Azure Identity
+cat > flux-infra/clusters/$CLUSTER/pod-identity.yaml <<EOF
+---
+apiVersion: "aadpodidentity.k8s.io/v1"
+kind: AzureIdentity
+metadata:
+  name: sample-identity
+spec:
+  type: 1
+  tenantID: $TENANT_ID
+  clientID: $PRINCIPAL_ID
+  clientPassword: {"name":"$PRINCIPAL_NAME-creds","namespace":"default"}
+---
+apiVersion: "aadpodidentity.k8s.io/v1"
+kind: AzureIdentityBinding
+metadata:
+  name: sample-identity-binding
+spec:
+  azureIdentity: "sample-identity"
+  selector: "sample-identity"
+EOF
+
+
+
+
+# Deploy Sample Pod
+cat > flux-infra/clusters/$CLUSTER/sample-app.yaml <<EOF
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-env
+  labels:
+    aadpodidbinding: sample-identity
+spec:
+  volumes:
+    - name: azure-keyvault
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: azure-keyvault
+
+  containers:
+    - image: gcr.io/kuar-demo/kuard-amd64:1
+      name: kuard
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      volumeMounts:
+        - name: azure-keyvault
+          mountPath: "/mnt/azure-keyvault"
+          readOnly: true
+      env:
+
+        # Static Variables
+        - name: hello
+          value: world
+
+        # Secret Variables
+        - name: admin
+          valueFrom:
+            secretKeyRef:
+              name: key-vault-secrets
+              key: admin-password
+EOF
 
 ```
 
