@@ -212,11 +212,15 @@ flux create kustomization edge-apps \
 # Update the Git Repo
 BASE_DIR=$(pwd)
 cd flux-infra && \
-  git add -f flux-infra/clusters/$CLUSTER/apps-kustomization.yaml && \
+  git add -f clusters/$CLUSTER && \
   git add -f apps && \
   git commit -am "Sample App Deployment" && \
   git push && \
   cd $BASE_DIR
+
+# Validate the kustomization
+flux reconcile kustomization flux-system --with-source
+flux get kustomizations
 
 ```
 

@@ -23,5 +23,5 @@ spec:
       namespace: cert-manager
     - apiVersion: apps/v1
       kind: Deployment
-      name: certmgr-cert-manager
-      namespace: certmgr-cert-manager-webhook
+      name: certmgr-cert-manager-webhook
+      namespace: cert-manager
