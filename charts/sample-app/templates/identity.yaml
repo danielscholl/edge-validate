@@ -1,0 +1,20 @@
+{{- $namespace := .Release.Namespace }}
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: sample-app-identity
+  namespace: {{ $namespace }}
+spec:
+  type: 1
+  tenantID: {{ .Values.azure.tenant_id }}
+  clientID: {{ .Values.azure.principal_id }}
+  clientPassword: {"name":"principal-creds","namespace":"default"}
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: sample-app-identity-binding
+  namespace: {{ $namespace }}
+spec:
+  azureIdentity: sample-app-identity
+  selector: sample-app-identity

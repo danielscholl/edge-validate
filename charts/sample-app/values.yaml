@@ -1,0 +1,13 @@
+# Default values for hello-arc.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+################################################################################
+# Specify the azure environment specific values
+#
+azure:
+  tenant_id: ""
+  subscription_id: ""
+  principal_id: ""
+  resourcegroup_name: ""
+  keyvault_name: ""
