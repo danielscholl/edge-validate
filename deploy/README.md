@@ -256,14 +256,19 @@ flux get kustomizations
 kind delete cluster --name $CLUSTER
 
 # Remove the Cluster Configuration
-rm -rf flux-infra/clusters/$CLUSTER
+rm -rf flux-infra/clusters
+
+# Remove the app
+rm -rf flux-infra/apps
 
 # Update the Git Repo
 BASE_DIR=$(pwd)
 cd flux-infra && \
-  git add -f clusters/$CLUSTER && \
+  git add -f clusters && \
+  git add -f apps && \
   git commit -am "Removing Cluster" && \
   git push && \
   cd $BASE_DIR
+
 rm -rf flux-infra
 ```
