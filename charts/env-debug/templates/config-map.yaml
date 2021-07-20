@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: config
+  name: {{ .Release.Name }}-config
   namespace: {{ $namespace }}
 data:
   MESSAGE: "Hello World"

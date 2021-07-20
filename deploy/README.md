@@ -34,11 +34,10 @@ nodes:
     protocol: TCP
 EOF
 
-# Install Calico Networking
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-
-# Install Nginx Ingress Controller
+# Install Calico Networking and NGINX Ingress Controller
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml && \
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
 
 # Scale down CoreDNS to save resources
 kubectl scale deployment --replicas 1 coredns --namespace kube-system
@@ -129,18 +128,10 @@ az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --obj
 Deploy Application to Kubernetes
 
 ```bash
-#################################
-### Create Sample Application ###
-#################################
+# Create the Application Base Resources
 mkdir -p flux-infra/apps/base/sample-app
 
-cat > flux-infra/apps/base/sample-app/namespace.yaml <<EOF
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: sample-app
-EOF
+
 
 cat > flux-infra/apps/base/sample-app/release.yaml <<EOF
 ---
@@ -172,14 +163,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: sample-app
 resources:
-  - namespace.yaml
   - release.yaml
 EOF
 
-###################################
-### Create Cluster App Override ###
-###################################
+# Create the Application Environment Overrides or Patches
 mkdir -p flux-infra/apps/$CLUSTER
+
+cat > flux-infra/apps/$CLUSTER/namespace.yaml <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sample-app
+EOF
 
 kubectl create secret generic $PRINCIPAL_NAME-creds \
   --namespace sample-app \
@@ -197,7 +193,7 @@ metadata:
   namespace: sample-app
 spec:
   values:
-    message: "Cluster env is $CLUSTER"
+    message: "Environment is $CLUSTER"
 EOF
 
 cat > flux-infra/apps/$CLUSTER/kustomization.yaml <<EOF
@@ -224,9 +220,9 @@ cd flux-infra && \
   cd $BASE_DIR
 
 
-#############################################
-### Deploy the Cluster Apps Kustomization ###
-#############################################
+#####################################
+### Deploy the Apps Kustomization ###
+#####################################
 flux create kustomization edge-apps \
   --source=flux-system \
   --path=./apps/$CLUSTER \
