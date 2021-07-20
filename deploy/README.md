@@ -35,9 +35,10 @@ nodes:
 EOF
 
 # Install Calico Networking and NGINX Ingress Controller
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml && \
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
+# Install NGINX Ingress Controller
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
 # Scale down CoreDNS to save resources
 kubectl scale deployment --replicas 1 coredns --namespace kube-system
@@ -94,7 +95,7 @@ kubectl get pods -n istio-operator
 
 ## Deploy a Sample Application
 
-Create required Azure Resources
+**Create required Azure Resources**
 
 ```bash
 RESOURCE_GROUP="validate-sample"
@@ -125,14 +126,13 @@ PRINCIPAL_OID=$(az ad sp list --display-name $PRINCIPAL_NAME --query [].objectId
 az keyvault set-policy --name $VAULT_NAME --resource-group $RESOURCE_GROUP --object-id $PRINCIPAL_OID --key-permissions encrypt decrypt --secret-permissions get --certificate-permissions get
 ```
 
-Deploy Application to Kubernetes
+**Create the Application Base Resources**
 
 ```bash
-# Create the Application Base Resources
+# Create the Application Base Directory
 mkdir -p flux-infra/apps/base/sample-app
 
-
-
+# Create the Flux Helm Release
 cat > flux-infra/apps/base/sample-app/release.yaml <<EOF
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
@@ -157,6 +157,7 @@ spec:
     message: "Sample App"
 EOF
 
+# Create the Kustomization
 cat > flux-infra/apps/base/sample-app/kustomization.yaml <<EOF
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -166,9 +167,22 @@ resources:
   - release.yaml
 EOF
 
-# Create the Application Environment Overrides or Patches
+# Update the Git Repo
+BASE_DIR=$(pwd)
+cd flux-infra && \
+  git add -f apps/base && \
+  git commit -am "Sample App Deployment Base" && \
+  git push && \
+  cd $BASE_DIR
+```
+
+**Create the Application Environment Overrides or Patches**
+
+```bash
+# Create the Application Environment Patch Directory
 mkdir -p flux-infra/apps/$CLUSTER
 
+# Create the Namespace
 cat > flux-infra/apps/$CLUSTER/namespace.yaml <<EOF
 ---
 apiVersion: v1
@@ -177,6 +191,7 @@ metadata:
   name: sample-app
 EOF
 
+# Create the KV Credentials Secret
 kubectl create secret generic kv-creds \
   --namespace sample-app \
   --from-literal clientid=$PRINCIPAL_ID \
@@ -186,7 +201,7 @@ kubectl create secret generic kv-creds \
     --controller-name sealed-secrets \
     --format yaml
 
-
+# Create Release with Values Set
 cat > flux-infra/apps/$CLUSTER/sample-app-values.yaml <<EOF
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
@@ -203,6 +218,7 @@ spec:
       keyvault_name: $VAULT_NAME
 EOF
 
+# Create the Kustomize Override Patch
 cat > flux-infra/apps/$CLUSTER/kustomization.yaml <<EOF
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -220,16 +236,16 @@ EOF
 # Update the Git Repo
 BASE_DIR=$(pwd)
 cd flux-infra && \
-  git add -f apps/base && \
   git add -f apps/$CLUSTER && \
   git commit -am "Sample App Deployment" && \
   git push && \
   cd $BASE_DIR
+```
 
+**Deploy the Apps Kustomization**
 
-#####################################
-### Deploy the Apps Kustomization ###
-#####################################
+```bash
+# Create the Kustomization
 flux create kustomization edge-apps \
   --source=flux-system \
   --path=./apps/$CLUSTER \
