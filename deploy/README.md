@@ -132,41 +132,49 @@ Deploy Application to Kubernetes
 
 mkdir -p flux-infra/apps/base/sample-app
 
-# NameSpace
-cat > flux-infra/apps/base/sample-app/namespace.yaml <<EOF
+# Application Resources
+cat > flux-infra/apps/base/sample-app/resources.yaml <<EOF
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: sample-app
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: GitRepository
+metadata:
+  name: edge-validate
+  namespace: flux-system
+spec:
+  interval: 5m0s
+  ref:
+    branch: main
+  url: https://github.com/danielscholl/edge-validate
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: sample-app
+  namespace: flux-system
+spec:
+  chart:
+    spec:
+      chart: ./charts/sample-app
+      sourceRef:
+        kind: GitRepository
+        name: edge-validate
+  install: {}
+  interval: 5m0s
+  targetNamespace: sample-app
 EOF
 
-# Flux Source
-flux create source git edge-validate \
---interval=5m \
---url=https://github.com/danielscholl/edge-validate \
---branch=main \
---namespace=flux-system --export > flux-infra/apps/base/sample-app/git-source.yaml
-
-# Flux Helm Release
-flux create helmrelease sample-app \
-    --interval=5m \
-    --source=GitRepository/edge-validate \
-    --chart=./charts/sample-app \
-    --namespace=flux-system \
-    --target-namespace=sample-app \
-    --export > flux-infra/apps/base/sample-app/helm-release.yaml
-
-# Flux Kustomization
 cat > flux-infra/apps/base/sample-app/kustomization.yaml <<EOF
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: flux-system
 resources:
-  - namespace.yaml
-  - git-source.yaml
-  - helm-release.yaml
+  - resources.yaml
 EOF
 
 ##########################################
@@ -174,24 +182,32 @@ EOF
 ##########################################
 mkdir -p flux-infra/apps/$CLUSTER
 
-# Environment Variables
-cat > values.yaml <<EOF
-azure:
-  tenant_id: $TENANT_ID
-  subscription_id: $SUBSCRIPTION_ID
-  principal_id: $PRINCIPAL_ID
-  resourcegroup_name: $RESOURCE_GROUP
-  keyvault_name: $VAULT_NAME
+# Environment Helm Release with Values
+cat > flux-infra/apps/$CLUSTER/sample-app-values.yaml <<EOF
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: sample-app
+  namespace: flux-system
+spec:
+  chart:
+    spec:
+      chart: ./charts/sample-app
+      sourceRef:
+        kind: GitRepository
+        name: edge-validate
+  install: {}
+  interval: 5m0s
+  targetNamespace: sample-app
+  values:
+    azure:
+      tenant_id: $TENANT_ID
+      subscription_id: $SUBSCRIPTION_ID
+      principal_id: $PRINCIPAL_ID
+      resourcegroup_name: $RESOURCE_GROUP
+      keyvault_name: $VAULT_NAME
 EOF
-
-flux create helmrelease sample-app \
-    --interval=5m \
-    --source=GitRepository/edge-validate \
-    --chart=./charts/sample-app \
-    --namespace=flux-system \
-    --target-namespace=sample-app \
-    --values=values.yaml \
-    --export > flux-infra/apps/$CLUSTER/sample-app-values.yaml && rm values.yaml
 
 # Environment Sealed Secret
 kubectl create secret generic $PRINCIPAL_NAME-creds \
@@ -199,7 +215,7 @@ kubectl create secret generic $PRINCIPAL_NAME-creds \
   --from-literal clientsecret=$PRINCIPAL_SECRET --dry-run=client -o yaml| kubeseal \
     --controller-namespace kube-system \
     --controller-name sealed-secrets \
-    --format yaml > flux-infra/apps/$CLUSTER/sample-app-sealed-secret.yaml
+    --format yaml > flux-infra/apps/$CLUSTER/sample-app-secret.yaml
 
 # Environment Kustomization
 cat > flux-infra/apps/$CLUSTER/kustomization.yaml <<EOF
@@ -209,7 +225,7 @@ kind: Kustomization
 namespace: flux-system
 resources:
   - ../base/sample-app/
-  - sample-app-sealed-secret.yaml
+  - sample-app-secret.yaml
 patchesStrategicMerge:
   - sample-app-values.yaml
 EOF
