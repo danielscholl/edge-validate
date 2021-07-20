@@ -85,7 +85,7 @@ cd flux-infra && \
 
 # Validate the Deployment
 flux reconcile kustomization flux-system --with-source
-kubectl get HelmRelease -A
+kubectl get HelmRelease -A -w
 kubectl get pods -n istio-system
 kubectl get pods -n istio-operator
 ```
@@ -208,7 +208,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: flux-system
 resources:
-  - ../base/sample-app
+  - ../base/sample-app/
   - sample-app-sealed-secret.yaml
 patchesStrategicMerge:
   - sample-app-values.yaml
@@ -224,9 +224,8 @@ cd flux-infra && \
   cd $BASE_DIR
 
 
-
 #############################################
-### Create the Cluster Apps Kustomization ###
+### Deploy the Cluster Apps Kustomization ###
 #############################################
 flux create kustomization edge-apps \
   --source=flux-system \

@@ -1,5 +1,4 @@
 {{- $namespace := .Release.Namespace }}
-{{- if .Values.global.debug }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -45,4 +44,3 @@ spec:
             configMapKeyRef:
               name: {{ .Release.Name }}-config
               key: ENV_KEYVAULT
-{{- end }}
