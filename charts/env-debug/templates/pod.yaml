@@ -33,9 +33,9 @@ spec:
             configMapKeyRef:
               name: {{ .Release.Name }}-config
               key: MESSAGE
-        # - name: ADMIN_PASSWORD
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: key-vault-secrets
-        #       key: admin-password
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: key-vault-secrets
+              key: admin-password
 
