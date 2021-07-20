@@ -177,7 +177,7 @@ metadata:
   name: sample-app
 EOF
 
-kubectl create secret generic $PRINCIPAL_NAME-creds \
+kubectl create secret generic kv-creds \
   --namespace sample-app \
   --from-literal clientsecret=$PRINCIPAL_SECRET --dry-run=client -o yaml| kubeseal \
     --controller-namespace kube-system \
