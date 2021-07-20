@@ -12,7 +12,10 @@ spec:
   path: ./deploy/kv-csi-driver
   prune: true
   validation: client
-  # healthChecks:
-  #   - kind: DaemonSet
-  #     name: aad-pod-identity-nmi
-  #     namespace: aad-pod-identity
+  healthChecks:
+    - kind: DaemonSet
+      name: kv-csi-driver-csi-secrets-store-provider-azure
+      namespace: kv-csi-driver
+    - kind: DaemonSet
+      name: kv-csi-driver-secrets-store-csi-driver
+      namespace: kv-csi-driver
