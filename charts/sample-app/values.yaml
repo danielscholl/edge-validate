@@ -5,9 +5,10 @@
 ################################################################################
 # Specify the azure environment specific values
 #
-azure:
-  tenant_id: ""
-  subscription_id: ""
-  principal_id: ""
-  resourcegroup_name: ""
-  keyvault_name: ""
+message: "Hello World"
+# azure:
+#   tenant_id: ""
+#   subscription_id: ""
+#   principal_id: ""
+#   resourcegroup_name: ""
+#   keyvault_name: ""

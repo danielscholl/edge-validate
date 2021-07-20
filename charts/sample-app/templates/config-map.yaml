@@ -1,8 +1,8 @@
-{{- $namespace := .Release.Namespace }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sample-app-config
-  namespace: {{ $namespace }}
-data:
-  ENV_KEYVAULT: https://{{ .Values.azure.keyvault_name }}.vault.azure.net/
+# {{- $namespace := .Release.Namespace }}
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: sample-app-config
+#   namespace: {{ $namespace }}
+# data:
+#   ENV_KEYVAULT: https://{{ .Values.azure.keyvault_name }}.vault.azure.net/

@@ -35,7 +35,10 @@ nodes:
 EOF
 
 # Install Calico Networking
-curl https://docs.projectcalico.org/manifests/calico.yaml | kubectl apply -f -
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+# Install Nginx Ingress Controller
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
 # Scale down CoreDNS to save resources
 kubectl scale deployment --replicas 1 coredns --namespace kube-system
@@ -129,27 +132,18 @@ Deploy Application to Kubernetes
 #################################
 ### Create Sample Application ###
 #################################
-
 mkdir -p flux-infra/apps/base/sample-app
 
 # Application Resources
-cat > flux-infra/apps/base/sample-app/resources.yaml <<EOF
+cat > flux-infra/apps/base/sample-app/namespace.yaml <<EOF
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: sample-app
----
-apiVersion: source.toolkit.fluxcd.io/v1beta1
-kind: GitRepository
-metadata:
-  name: edge-validate
-  namespace: flux-system
-spec:
-  interval: 5m0s
-  ref:
-    branch: main
-  url: https://github.com/danielscholl/edge-validate
+EOF
+
+cat > flux-infra/apps/base/sample-app/release.yaml <<EOF
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
@@ -168,13 +162,37 @@ spec:
   targetNamespace: sample-app
 EOF
 
+
+
+cat > flux-infra/apps/base/sample-app/pod.yaml <<EOF
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-env
+  namespace: sample-app
+spec:
+  containers:
+    - image: gcr.io/kuar-demo/kuard-amd64:1
+      name: kuard
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      env:
+        - name: hello
+          value: world
+EOF
+
+
 cat > flux-infra/apps/base/sample-app/kustomization.yaml <<EOF
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: flux-system
+namespace: sample-app
 resources:
-  - resources.yaml
+  - namespace.yaml
+  - pod.yaml
 EOF
 
 ##########################################
@@ -183,31 +201,31 @@ EOF
 mkdir -p flux-infra/apps/$CLUSTER
 
 # Environment Helm Release with Values
-cat > flux-infra/apps/$CLUSTER/sample-app-values.yaml <<EOF
----
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
-kind: HelmRelease
-metadata:
-  name: sample-app
-  namespace: flux-system
-spec:
-  chart:
-    spec:
-      chart: ./charts/sample-app
-      sourceRef:
-        kind: GitRepository
-        name: edge-validate
-  install: {}
-  interval: 5m0s
-  targetNamespace: sample-app
-  values:
-    azure:
-      tenant_id: $TENANT_ID
-      subscription_id: $SUBSCRIPTION_ID
-      principal_id: $PRINCIPAL_ID
-      resourcegroup_name: $RESOURCE_GROUP
-      keyvault_name: $VAULT_NAME
-EOF
+# cat > flux-infra/apps/$CLUSTER/sample-app-values.yaml <<EOF
+# ---
+# apiVersion: helm.toolkit.fluxcd.io/v2beta1
+# kind: HelmRelease
+# metadata:
+#   name: sample-app
+#   namespace: flux-system
+# spec:
+#   chart:
+#     spec:
+#       chart: ./charts/sample-app
+#       sourceRef:
+#         kind: GitRepository
+#         name: edge-validate
+#   install: {}
+#   interval: 5m0s
+#   targetNamespace: sample-app
+#   values:
+#     azure:
+#       tenant_id: $TENANT_ID
+#       subscription_id: $SUBSCRIPTION_ID
+#       principal_id: $PRINCIPAL_ID
+#       resourcegroup_name: $RESOURCE_GROUP
+#       keyvault_name: $VAULT_NAME
+# EOF
 
 # Environment Sealed Secret
 kubectl create secret generic $PRINCIPAL_NAME-creds \
@@ -217,18 +235,18 @@ kubectl create secret generic $PRINCIPAL_NAME-creds \
     --controller-name sealed-secrets \
     --format yaml > flux-infra/apps/$CLUSTER/sample-app-secret.yaml
 
+
 # Environment Kustomization
 cat > flux-infra/apps/$CLUSTER/kustomization.yaml <<EOF
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: flux-system
+namespace: sample-app
 resources:
-  - ../base/sample-app/
+  - ../base/sample-app
   - sample-app-secret.yaml
-patchesStrategicMerge:
-  - sample-app-values.yaml
 EOF
+
 
 # Update the Git Repo
 BASE_DIR=$(pwd)
@@ -270,11 +288,8 @@ flux get kustomizations
 # Remove the KinD Cluster
 kind delete cluster --name $CLUSTER
 
-# Remove the Cluster Configuration
-rm -rf flux-infra/clusters
-
-# Remove the app
-rm -rf flux-infra/apps
+# Remove the Cluster Configuration and apps
+rm -rf flux-infra/clusters && rm -rf flux-infra/apps
 
 # Update the Git Repo
 BASE_DIR=$(pwd)
@@ -283,7 +298,6 @@ cd flux-infra && \
   git add -f apps && \
   git commit -am "Removing Cluster" && \
   git push && \
-  cd $BASE_DIR
-
-rm -rf flux-infra
+  cd $BASE_DIR && \
+   rm -rf flux-infra
 ```

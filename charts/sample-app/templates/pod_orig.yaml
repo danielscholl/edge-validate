@@ -1,0 +1,46 @@
+{{- $namespace := .Release.Namespace }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-env
+  namespace: {{ $namespace }}
+  labels:
+    aadpodidbinding: sample-app-identity
+spec:
+  volumes:
+    - name: azure-keyvault
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: azure-keyvault
+
+  containers:
+    - image: gcr.io/kuar-demo/kuard-amd64:1
+      name: kuard
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      volumeMounts:
+        - name: azure-keyvault
+          mountPath: "/mnt/azure-keyvault"
+          readOnly: true
+      env:
+        # Static Variables
+        - name: hello
+          value: world
+
+        # Secret Variables Active Directory
+        - name: CLIENT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: client-password
+
+        # Config Map Variables
+        - name: KEYVAULT_URI
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-config
+              key: ENV_KEYVAULT
