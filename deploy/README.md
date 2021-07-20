@@ -194,6 +194,10 @@ metadata:
 spec:
   values:
     message: "Environment is $CLUSTER"
+    azure:
+      tenant_id: $TENANT_ID
+      subscription_id: $SUBSCRIPTION_ID
+      keyvault_name: $VAULT_NAME
 EOF
 
 cat > flux-infra/apps/$CLUSTER/kustomization.yaml <<EOF

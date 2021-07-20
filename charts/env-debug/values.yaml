@@ -6,4 +6,8 @@
 # Specify the azure environment specific values
 #
 message: "Hello World"
+azure:
+  tenant_id: ""
+  subscription_id: ""
+  keyvault_name: ""
 
