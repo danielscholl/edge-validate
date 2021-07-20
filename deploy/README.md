@@ -265,6 +265,12 @@ cd flux-infra && \
 # Validate the kustomization
 flux reconcile kustomization flux-system --with-source
 flux get kustomizations
+flux get helmreleases -A
+
+# Validate
+kubectl exec kuard -n sample-app -- ls /mnt/azure-keyvault
+kubectl exec kuard -n sample-app -- cat /mnt/azure-keyvault/admin
+kubectl exec kuard -n sample-app -- env |grep ADMIN_PASSWORD
 ```
 
 ## Cleanup *(optional)*
