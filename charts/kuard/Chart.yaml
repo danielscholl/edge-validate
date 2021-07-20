@@ -1,5 +1,5 @@
 apiVersion: v2
-name: sample-app
+name: kuard
 description: A Sample App with Ingress for accessing KV Secrets
 
 # A chart can be either an 'application' or a 'library' chart.
