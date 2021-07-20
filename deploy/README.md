@@ -148,12 +148,12 @@ cat > flux-infra/apps/base/sample-app/release.yaml <<EOF
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: sample-app
+  name: environment-debug
   namespace: flux-system
 spec:
   chart:
     spec:
-      chart: ./charts/sample-app
+      chart: ./charts/env-debug
       sourceRef:
         kind: GitRepository
         name: edge-validate
@@ -162,29 +162,6 @@ spec:
   targetNamespace: sample-app
 EOF
 
-
-
-cat > flux-infra/apps/base/sample-app/pod.yaml <<EOF
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: debug-env
-  namespace: sample-app
-spec:
-  containers:
-    - image: gcr.io/kuar-demo/kuard-amd64:1
-      name: kuard
-      ports:
-        - containerPort: 8080
-          name: http
-          protocol: TCP
-      env:
-        - name: hello
-          value: world
-EOF
-
-
 cat > flux-infra/apps/base/sample-app/kustomization.yaml <<EOF
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -192,7 +169,7 @@ kind: Kustomization
 namespace: sample-app
 resources:
   - namespace.yaml
-  - pod.yaml
+  - release.yaml
 EOF
 
 ##########################################
