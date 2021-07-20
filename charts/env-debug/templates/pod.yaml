@@ -5,15 +5,15 @@ metadata:
   name: kuard
   namespace: {{ $namespace }}
 spec:
-  # volumes:
-  #   - name: azure-keyvault
-  #     csi:
-  #       driver: secrets-store.csi.k8s.io
-  #       readOnly: true
-  #       volumeAttributes:
-  #         secretProviderClass: azure-keyvault
-  #       nodePublishSecretRef:
-  #         name: kv-creds
+  volumes:
+    - name: azure-keyvault
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: azure-keyvault
+        nodePublishSecretRef:
+          name: kv-creds
   containers:
     - image: gcr.io/kuar-demo/kuard-amd64:1
       name: kuard
@@ -21,10 +21,10 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
-      # volumeMounts:
-      #   - name: azure-keyvault
-      #     mountPath: "/mnt/azure-keyvault"
-      #     readOnly: true
+      volumeMounts:
+        - name: azure-keyvault
+          mountPath: "/mnt/azure-keyvault"
+          readOnly: true
       env:
         - name: MESSAGE
           value: "{{ .Values.message }}"

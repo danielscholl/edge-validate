@@ -179,10 +179,13 @@ EOF
 
 kubectl create secret generic kv-creds \
   --namespace sample-app \
-  --from-literal clientsecret=$PRINCIPAL_SECRET --dry-run=client -o yaml| kubeseal \
+  --from-literal clientid=$PRINCIPAL_ID \
+  --from-literal clientsecret=$PRINCIPAL_SECRET \
+  --dry-run=client -o yaml| kubeseal -w flux-infra/apps/$CLUSTER/sample-app-secret.yaml \
     --controller-namespace kube-system \
     --controller-name sealed-secrets \
-    --format yaml > flux-infra/apps/$CLUSTER/sample-app-secret.yaml
+    --format yaml
+
 
 cat > flux-infra/apps/$CLUSTER/sample-app-values.yaml <<EOF
 ---
