@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: debug-env
+  name: kuard
   namespace: {{ $namespace }}
 spec:
   containers:
@@ -15,3 +15,9 @@ spec:
       env:
         - name: MESSAGE
           value: "{{ .Values.message }}"
+        - name: CONFIG_MESSAGE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-config
+              key: MESSAGE
+

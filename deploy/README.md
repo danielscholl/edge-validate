@@ -134,7 +134,6 @@ Deploy Application to Kubernetes
 #################################
 mkdir -p flux-infra/apps/base/sample-app
 
-# Application Resources
 cat > flux-infra/apps/base/sample-app/namespace.yaml <<EOF
 ---
 apiVersion: v1
@@ -149,7 +148,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: environment-debug
-  namespace: flux-system
+  namespace: sample-app
 spec:
   chart:
     spec:
@@ -157,9 +156,14 @@ spec:
       sourceRef:
         kind: GitRepository
         name: edge-validate
-  install: {}
+        namespace: flux-system
   interval: 5m0s
+  install:
+    remediation:
+      retries: 3
   targetNamespace: sample-app
+  values:
+    message: "Sample App"
 EOF
 
 cat > flux-infra/apps/base/sample-app/kustomization.yaml <<EOF
@@ -172,39 +176,11 @@ resources:
   - release.yaml
 EOF
 
-##########################################
-### Create Sample Application Override ###
-##########################################
+###################################
+### Create Cluster App Override ###
+###################################
 mkdir -p flux-infra/apps/$CLUSTER
 
-# Environment Helm Release with Values
-# cat > flux-infra/apps/$CLUSTER/sample-app-values.yaml <<EOF
-# ---
-# apiVersion: helm.toolkit.fluxcd.io/v2beta1
-# kind: HelmRelease
-# metadata:
-#   name: sample-app
-#   namespace: flux-system
-# spec:
-#   chart:
-#     spec:
-#       chart: ./charts/sample-app
-#       sourceRef:
-#         kind: GitRepository
-#         name: edge-validate
-#   install: {}
-#   interval: 5m0s
-#   targetNamespace: sample-app
-#   values:
-#     azure:
-#       tenant_id: $TENANT_ID
-#       subscription_id: $SUBSCRIPTION_ID
-#       principal_id: $PRINCIPAL_ID
-#       resourcegroup_name: $RESOURCE_GROUP
-#       keyvault_name: $VAULT_NAME
-# EOF
-
-# Environment Sealed Secret
 kubectl create secret generic $PRINCIPAL_NAME-creds \
   --namespace sample-app \
   --from-literal clientsecret=$PRINCIPAL_SECRET --dry-run=client -o yaml| kubeseal \
@@ -212,16 +188,29 @@ kubectl create secret generic $PRINCIPAL_NAME-creds \
     --controller-name sealed-secrets \
     --format yaml > flux-infra/apps/$CLUSTER/sample-app-secret.yaml
 
+cat > flux-infra/apps/$CLUSTER/sample-app-values.yaml <<EOF
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: environment-debug
+  namespace: sample-app
+spec:
+  values:
+    message: "Cluster env is $CLUSTER"
+EOF
 
-# Environment Kustomization
 cat > flux-infra/apps/$CLUSTER/kustomization.yaml <<EOF
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: sample-app
 resources:
-  - ../base/sample-app
+  - namespace.yaml
   - sample-app-secret.yaml
+  - ../base/sample-app
+patchesStrategicMerge:
+  - sample-app-values.yaml
 EOF
 
 
@@ -262,19 +251,16 @@ flux get kustomizations
 ## Cleanup *(optional)*
 
 ```bash
-# Remove the KinD Cluster
-kind delete cluster --name $CLUSTER
-
-# Remove the Cluster Configuration and apps
-rm -rf flux-infra/clusters && rm -rf flux-infra/apps
-
-# Update the Git Repo
 BASE_DIR=$(pwd)
+
+# Remove the KinD Cluster Cluster Configuration, Apps and Cloned Repo
+kind delete cluster --name $CLUSTER && \
+rm -rf flux-infra/clusters && rm -rf flux-infra/apps && \
 cd flux-infra && \
   git add -f clusters && \
   git add -f apps && \
   git commit -am "Removing Cluster" && \
   git push && \
   cd $BASE_DIR && \
-   rm -rf flux-infra
+rm -rf flux-infra
 ```
