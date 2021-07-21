@@ -51,7 +51,7 @@ spec:
             - name: ALWAYS_CONFIG
               valueFrom:
                 configMapKeyRef:
-                  name: {{ $namespace }}-config
+                  name: {{ include "env-debug.fullname" . }}-config
                   key: MESSAGE
           {{- if .Values.env }}
           {{- range .Values.env }}
@@ -62,7 +62,7 @@ spec:
               {{- if .config }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ $namespace }}-config
+                  name: {{ include "env-debug.fullname" . }}-config
                   key: {{ .config.key | quote }}
               {{- end }}
               {{- if .secret }}

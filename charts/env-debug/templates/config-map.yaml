@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-config
+  name: {{ include "env-debug.fullname" . }}-config
   namespace: {{ $namespace }}
 data:
   MESSAGE: "From Config Map"
