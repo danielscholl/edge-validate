@@ -1,9 +1,10 @@
+{{- $namespace := .Release.Namespace }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "env-debug.fullname" . }}
   labels:
-    {{- include "enb-debug.labels" . | nindent 4 }}
+    {{- include "env-debug.labels" . | nindent 4 }}
 spec:
 {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -20,6 +21,7 @@ spec:
       labels:
         {{- include "env-debug.selectorLabels" . | nindent 8 }}
     spec:
+    {{- if .Values.azure.enabled }}
       volumes:
         - name: azure-keyvault
           csi:
@@ -29,6 +31,7 @@ spec:
               secretProviderClass: azure-keyvault
             nodePublishSecretRef:
               name: kv-creds
+    {{- end }}
       containers:
         - image: gcr.io/kuar-demo/kuard-amd64:1
           name: kuard
@@ -36,21 +39,30 @@ spec:
             - containerPort: 8080
               name: http
               protocol: TCP
+          {{- if .Values.azure.enabled }}
           volumeMounts:
             - name: azure-keyvault
               mountPath: "/mnt/azure-keyvault"
               readOnly: true
+          {{- end }}
+          {{- if .Values.env }}
           env:
-            - name: MESSAGE
-              value: "{{ .Values.message }}"
-            - name: CONFIG_MESSAGE
+          {{- range .Values.env }}
+            - name: {{ .name }}
+              {{- if .value }}
+              value: {{ .value | quote }}
+              {{- end }}
+              {{- if .config }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ .Release.Name }}-config
-                  key: MESSAGE
-            - name: ADMIN_PASSWORD
+                  name: {{ $namespace }}-config
+                  key: {{ .config.key | quote }}
+              {{- end }}
+              {{- if .secret }}
               valueFrom:
                 secretKeyRef:
-                  name: key-vault-secrets
-                  key: admin-password
-
+                  name: {{ .secret.name | quote }}
+                  key: {{ .secret.key | quote }}
+              {{- end }}
+          {{- end }}
+          {{- end }}

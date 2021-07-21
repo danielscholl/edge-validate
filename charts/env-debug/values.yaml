@@ -1,18 +1,40 @@
-# Default values for hello-arc.
+# Default values for env-debug.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 2
+replicaCount: 1
 
 nameOverride: ""
 fullnameOverride: ""
 
-################################################################################
-# Specify the azure environment specific values
-#
-message: "Hello World"
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+# To Enable Key Vault Secrets set azure enabled and complete required values.
 azure:
-  tenant_id: ""
-  subscription_id: ""
-  keyvault_name: ""
+  enabled: false
+  # tenant_id: ""
+  # subscription_id: ""
+  # keyvault_name: ""
+
+env:
+- name: MESSAGE
+  value: Hello World!
+- name: ADMIN_NAME
+  value: azureuser
+- name: CONFIG_VALUE
+  config:
+    key: MESSAGE
+# - name: ADMIN_PASSWORD
+#   secret:
+#     name: key-vault-secrets
+#     key: admin-password
 
