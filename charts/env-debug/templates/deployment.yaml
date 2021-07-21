@@ -48,8 +48,8 @@ spec:
           env:
             - name: ALWAYS_STATIC
               value: "From Chart"
-            - name: ANOTHER
-              value: "From new Chart"
+            # - name: ANOTHER
+            #   value: "From new Chart"
             - name: ALWAYS_CONFIG
               valueFrom:
                 configMapKeyRef:
