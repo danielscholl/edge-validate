@@ -45,8 +45,15 @@ spec:
               mountPath: "/mnt/azure-keyvault"
               readOnly: true
           {{- end }}
-          {{- if .Values.env }}
           env:
+            - name: ALWAYS_STATIC
+              value: testing
+            - name: ALWAYS_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $namespace }}-config
+                  key: MESSAGE
+          {{- if .Values.env }}
           {{- range .Values.env }}
             - name: {{ .name }}
               {{- if .value }}

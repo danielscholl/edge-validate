@@ -30,9 +30,6 @@ env:
   value: Hello World!
 - name: ADMIN_NAME
   value: azureuser
-- name: CONFIG_VALUE
-  config:
-    key: MESSAGE
 # - name: ADMIN_PASSWORD
 #   secret:
 #     name: key-vault-secrets
