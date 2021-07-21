@@ -5,5 +5,5 @@ metadata:
   name: {{ .Release.Name }}-config
   namespace: {{ $namespace }}
 data:
-  MESSAGE: "Config Map"
+  MESSAGE: "From Config Map"
 

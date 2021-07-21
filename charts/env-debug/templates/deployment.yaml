@@ -47,7 +47,7 @@ spec:
           {{- end }}
           env:
             - name: ALWAYS_STATIC
-              value: testing
+              value: "From Chart"
             - name: ALWAYS_CONFIG
               valueFrom:
                 configMapKeyRef:
