@@ -41,6 +41,7 @@ kind delete cluster --name $CLUSTER
 rm -rf $FLUX_DIR/clusters
 rm -rf $FLUX_DIR/apps
 cd $FLUX_DIR
+git pull
 git add -f clusters
 git add -f apps
 git commit -am "Removing Cluster"
